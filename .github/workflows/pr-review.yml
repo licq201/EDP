@@ -1,0 +1,15 @@
+name: PR Review Bot
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger OpenClaw PR Review
+        run: |
+          curl -X POST http://localhost:18789/webhook/pr \
+            -H "Content-Type: application/json" \
+            -d '{"action": "opened", "pr": "${{ github.event.pull_request.number }}"}'
