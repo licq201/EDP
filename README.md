@@ -12,13 +12,13 @@
 
 ---
 
-## ⚠️ 风险声明
+## ⚠️ 学术声明
 
 > **本框架仅供学术研究与教育用途。**
 >
-> - 本框架是用于**统计分析研究**的工具。
+> - 本框架是用于**概率分析与统计研究**的学术工具。
 > - 历史概率模式**不保证**未来结果。
-> - 本框架**不构成任何投资建议**。
+> - 本框架**不构成任何投资建议或决策建议**。
 > - 用户对自身决策承担全部责任，必须遵守**当地法律法规**。
 
 ---
@@ -67,10 +67,10 @@
 
 整合多源情报进行交叉验证：
 
-- **多源情报整合**：排名、历史战绩、战术分析、伤停信息、动机因素
+- **多源情报整合**：排名、历史记录、战术分析、状态信息、动机因素
 - **交叉验证机制**：多源信号一致性检验
 - **置信度量化**：5级置信度分类（极高/高/中/低/负）
-- **态势评估**：球队实力差异、疲劳因素、主客场表现
+- **态势评估**：实力差异、疲劳因素、主客场表现
 
 ### 2. 概率流向分析 (Probability Flow Analysis)
 
@@ -130,12 +130,12 @@
 3. **Elo评分系统**
    - 动态K因子
    - 评分偏差（RD）追踪
-   - 球队实力历史
+   - 实力历史建模
 
 ### API示例
 
 ```python
-from spaf import ProbabilityEngine
+from edp import ProbabilityEngine
 
 engine = ProbabilityEngine()
 
@@ -157,23 +157,23 @@ print(result.true_probabilities)
 ### 梯度图结构
 
 ```
-主队赢球方向 (Home Win):
+主队优势方向 (Home Win):
 1:0 → 2:0 → 2:1 → 3:0 → 3:1 → 3:2 → 4:0 → ...
 
 平局方向 (Draw):
 0:0 → 1:1 → 2:2 → 3:3 → ...
 
-客队赢球方向 (Away Win):
+客队优势方向 (Away Win):
 0:1 → 0:2 → 1:2 → 0:3 → 1:3 → 2:3 → ...
 ```
 
 ### 倍增评分公式
 
 ```python
-Amplification_Score = 
-    Base_Flow × 
-    Directional_Consistency × 
-    (1 + Gradient_Position) × 
+Amplification_Score =
+    Base_Flow ×
+    Directional_Consistency ×
+    (1 + Gradient_Position) ×
     Market_Momentum
 ```
 
@@ -185,11 +185,11 @@ Amplification_Score =
 
 | 来源 | 权重 | 说明 |
 |------|------|------|
-| 排名 | 高 | FIFA/官方排名 |
+| 排名 | 高 | 官方排名数据 |
 | 历史 | 高 | 历史交锋记录 |
-| 近期状态 | 高 | 最近5场表现 |
+| 近期状态 | 高 | 最近表现数据 |
 | 战术 | 中 | 攻防风格分析 |
-| 伤停 | 中 | 关键球员可用性 |
+| 状态 | 中 | 关键因素可用性 |
 | 动机 | 中 | 赛事背景因素 |
 
 ### 置信度计算
@@ -202,7 +202,7 @@ Confidence = Flow_Confidence × Intelligence_Confidence × Market_Consensus
 |--------|------|------|
 | 极高 | 三维一致 | 全权重 |
 | 高 | 两维一致 | 降权纳入 |
-| 中 | 一维支持 | 小额组合 |
+| 中 | 一维支持 | 小权重组合 |
 | 负 | 维度冲突 | 排除或逆向 |
 
 ---
@@ -235,7 +235,7 @@ Confidence = Flow_Confidence × Intelligence_Confidence × Market_Consensus
 | 贝叶斯推断 | Gelman et al. (2013) | 概率更新 |
 | 时间序列动量 | Moskowitz et al. (2012) | 倍增效应 |
 | 信息级联 | Banerjee (1992) | 级联风险 |
-| Elo评分 | Elo (1978) | 球队实力 |
+| Elo评分 | Elo (1978) | 实力建模 |
 | 前景理论 | Kahneman & Tversky (1979) | 偏差缓解 |
 
 完整文献列表请参见 [docs/theory/references.md](docs/theory/references.md)
@@ -248,16 +248,16 @@ Confidence = Flow_Confidence × Intelligence_Confidence × Market_Consensus
 
 ```bash
 # Python
-pip install spaf-framework
+pip install edp-framework
 
 # JavaScript/TypeScript
-npm install spaf-framework
+npm install edp-framework
 ```
 
 ### Python 示例
 
 ```python
-from spaf import (
+from edp import (
     ProbabilityEngine,
     FlowAmplificationEngine,
     DomainAwarenessSystem,
@@ -284,10 +284,10 @@ domain_report = awareness.analyze_match(match_intel, flow_confidences)
 ### TypeScript 示例
 
 ```typescript
-import { 
-  ProbabilityEngine, 
-  FlowAmplificationEngine 
-} from 'spaf-framework';
+import {
+  ProbabilityEngine,
+  FlowAmplificationEngine
+} from 'edp-framework';
 
 const engine = new ProbabilityEngine();
 const amplifier = new FlowAmplificationEngine();
@@ -336,13 +336,13 @@ MIT License - 详见 [LICENSE](LICENSE)
 
 **本框架仅供学术研究与教育用途。**
 
-- 本框架不构成任何投资建议或预测建议
+- 本框架不构成任何投资建议或决策建议
 - 使用本框架进行的任何决策由用户自行承担责任
 - 作者不对使用本框架造成的任何损失负责
 - 请遵守您所在地区的法律法规
 
 ---
 
-*以结构化分析、严格概率论和全域认知提供边际优势——仅供学术研究用途。*
+*以结构化分析、严格概率论和全域认知提供学术研究支持——仅供学术研究用途。*
 
 *© 2026 — 仅供学术研究与教育用途。*

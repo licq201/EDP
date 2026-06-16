@@ -1,17 +1,17 @@
-# SPAF MCP Server
+# EDP MCP Server
 
-Model Context Protocol (MCP) server for the SPAF framework.
+Model Context Protocol (MCP) server for the EDP framework.
 
 ## ⚠️ Disclaimer
 
 **This server is for ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 
-Sports prediction involves real financial risk. No system can guarantee profits.
+This framework is for probability analysis and statistical research. No system can guarantee results.
 
 ## Installation
 
 ```bash
-pip install spaf-mcp-server
+pip install edp-mcp-server
 ```
 
 ## Configuration
@@ -21,8 +21,8 @@ Add to your MCP client configuration (e.g., Claude Desktop):
 ```json
 {
   "mcpServers": {
-    "spaf": {
-      "command": "spaf-mcp-server",
+    "edp": {
+      "command": "edp-mcp-server",
       "args": []
     }
   }
@@ -33,15 +33,15 @@ Add to your MCP client configuration (e.g., Claude Desktop):
 
 ### `calculate_true_probability`
 
-Calculate true probabilities from bookmaker odds by removing the overround/margin.
+Calculate true probabilities from market quotes by removing the margin.
 
 **Parameters:**
-- `odds` (object): Dictionary mapping outcomes to decimal odds
+- `quotes` (object): Dictionary mapping outcomes to decimal values
 
 **Example:**
 ```json
 {
-  "odds": {
+  "quotes": {
     "home": 1.50,
     "draw": 4.20,
     "away": 6.00
@@ -57,7 +57,7 @@ Calculate true probabilities from bookmaker odds by removing the overround/margi
     "draw": 0.226,
     "away": 0.158
   },
-  "overround": 0.054
+  "margin": 0.054
 }
 ```
 
@@ -98,8 +98,8 @@ Validate a scheme against Three Principles and rules.
 
 **Parameters:**
 - `legs` (array): List of scheme legs
-- `multiplier` (integer, optional): Bet multiplier (default: 1)
-- `stake_per_combination` (number, optional): Stake amount (default: 2.0)
+- `multiplier` (integer, optional): Multiplier (default: 1)
+- `allocation_per_combination` (number, optional): Allocation amount (default: 2.0)
 
 **Returns:**
 - Validation result with any errors
@@ -113,7 +113,7 @@ Generate optimized schemes within budget.
 **Parameters:**
 - `amplification_report` (object): Amplification report
 - `budget` (number): Total budget to allocate
-- `match_data` (object): Match information
+- `scenario_data` (object): Scenario information
 - `max_schemes` (integer, optional): Maximum schemes to generate (default: 10)
 
 **Returns:**
@@ -121,12 +121,12 @@ Generate optimized schemes within budget.
 
 ## Usage with AI Assistants
 
-Once configured, you can use natural language to interact with the SPAF framework:
+Once configured, you can use natural language to interact with the EDP framework:
 
 ```
-User: Calculate the true probability for odds home 1.5, draw 4.2, away 6.0
+User: Calculate the true probability for quotes home 1.5, draw 4.2, away 6.0
 
-AI: I'll calculate the true probabilities by removing the bookmaker margin...
+AI: I'll calculate the true probabilities by removing the market margin...
 
 [Calls calculate_true_probability tool]
 
@@ -135,15 +135,15 @@ The true probabilities are:
 - Draw: 22.6%
 - Away: 15.8%
 
-The bookmaker margin (overround) is 5.4%.
+The market margin is 5.4%.
 ```
 
 ## Development
 
 ```bash
 # Clone repository
-git clone https://github.com/your-org/spaf-framework.git
-cd spaf-framework/mcp
+git clone https://github.com/ai-nurmamat/EDP.git
+cd EDP/mcp
 
 # Install dependencies
 pip install -e ".[dev]"
@@ -160,7 +160,7 @@ MIT License - See LICENSE file for details.
 
 **This server is for ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 
-- This server does not constitute any investment advice or gambling advice.
+- This server does not constitute any investment advice or decision-making advice.
 - Any decisions made using this server are the user's sole responsibility.
 - The author is not responsible for any losses incurred through use of this server.
 - Please comply with laws and regulations in your jurisdiction.

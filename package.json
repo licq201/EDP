@@ -15,22 +15,21 @@
   "keywords": [
     "probability",
     "analysis",
-    "sports",
-    "prediction",
+    "expectation-domain",
     "bayesian",
     "flow-analysis",
     "optimization"
   ],
-  "author": "SPAF Team",
+  "author": "EDP Team",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/spaf-framework.git"
+    "url": "https://github.com/ai-nurmamat/EDP.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/spaf-framework/issues"
+    "url": "https://github.com/ai-nurmamat/EDP/issues"
   },
-  "homepage": "https://github.com/your-org/spaf-framework#readme",
+  "homepage": "https://github.com/ai-nurmamat/EDP#readme",
   "devDependencies": {
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",

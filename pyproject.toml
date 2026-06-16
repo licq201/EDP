@@ -15,8 +15,7 @@ authors = [
 keywords = [
     "probability",
     "analysis",
-    "sports",
-    "prediction",
+    "expectation-domain",
     "bayesian",
     "flow-analysis",
     "optimization"
@@ -56,10 +55,10 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/your-org/spaf-framework"
-Documentation = "https://github.com/your-org/spaf-framework#readme"
-Repository = "https://github.com/your-org/spaf-framework.git"
-Issues = "https://github.com/your-org/spaf-framework/issues"
+Homepage = "https://github.com/ai-nurmamat/EDP"
+Documentation = "https://github.com/ai-nurmamat/EDP#readme"
+Repository = "https://github.com/ai-nurmamat/EDP.git"
+Issues = "https://github.com/ai-nurmamat/EDP/issues"
 
 [tool.setuptools.packages.find]
 where = ["src/python"]

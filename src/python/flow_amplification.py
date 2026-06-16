@@ -1,9 +1,9 @@
 """
-SPAF - Sports Analytics Framework
+EDP - Expectation Domain Perception Method
 Probability Flow Amplification Engine
 
 This module implements the probability flow amplification effect analysis,
-one of the most innovative components of the SPAF framework.
+one of the most innovative components of the EDP framework.
 
 The amplification effect is based on:
 - Time series momentum theory (Moskowitz et al., 2012)

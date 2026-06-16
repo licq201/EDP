@@ -1,11 +1,11 @@
 """
-SPAF - Sports Probability Analysis Framework
+EDP - Expectation Domain Perception Method
 Scheme Design Engine.
 
 This module implements the scheme design engine based on:
 - Three Principles (non-negotiable constraints)
-- Modern Portfolio Theory adapted for prediction markets (Markowitz, 1952)
-- Kelly criterion variant for capital allocation
+- Modern Portfolio Theory adapted for probability markets (Markowitz, 1952)
+- Kelly criterion variant for resource allocation
 
 References:
     Markowitz, H. (1952). "Portfolio Selection."

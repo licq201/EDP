@@ -1,5 +1,5 @@
 """
-SPAF - Sports Analytics Framework
+EDP - Expectation Domain Perception Method
 Domain-Aware Intelligence System
 
 This module implements the comprehensive domain awareness system that integrates

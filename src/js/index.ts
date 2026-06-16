@@ -5,14 +5,14 @@
  * This module implements the core probability analysis engine based on:
  * - Shin method for true probability extraction (Shin, 1992)
  * - Bayesian updating for probability flow analysis
- * - Kelly criterion variant for capital allocation
+ * - Kelly criterion variant for resource allocation
  *
  * @module edp-framework
  * @version 4.1.0
  * @license MIT
  *
  * DISCLAIMER: For ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.
- * Sports prediction involves real financial risk. No system can guarantee profits.
+ * Probability analysis involves uncertainty. No system can guarantee results.
  */
 
 /**
