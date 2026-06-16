@@ -1,0 +1,51 @@
+{
+  "name": "spaf-framework",
+  "version": "4.0.0",
+  "description": "Sports Probability Analysis Framework - Domain-Aware, Situational-Awareness-Driven, Probability-Flow-Based Optimization System",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "prepare": "npm run build",
+    "docs": "typedoc --out docs/api src/js/index.ts"
+  },
+  "keywords": [
+    "probability",
+    "analysis",
+    "sports",
+    "prediction",
+    "bayesian",
+    "flow-analysis",
+    "optimization"
+  ],
+  "author": "SPAF Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/spaf-framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/spaf-framework/issues"
+  },
+  "homepage": "https://github.com/your-org/spaf-framework#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.5.0",
+    "prettier": "^3.0.0",
+    "ts-jest": "^29.1.0",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ]
+}
