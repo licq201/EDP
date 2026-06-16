@@ -1,10 +1,10 @@
-# 🎯 SPAF - 体育概率分析框架
+# 🎯 SPAF - Sports Analytics Framework
 
-> **基于态势感知、概率流向与贝叶斯更新的竞彩方案优化系统**
+> **全域感知型体育竞彩分析框架**
 >
-> **Sports Probability Analysis Framework - Domain-Aware, Situational-Awareness-Driven, Probability-Flow-Based Optimization System**
+> **Domain-Aware, Situational-Awareness-Driven, Probability-Flow-Based Sports Analytics Optimization System**
 
-![Version](https://img.shields.io/badge/Version-4.0-blue)
+![Version](https://img.shields.io/badge/Version-4.1-blue)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
@@ -16,31 +16,25 @@
 
 > **本框架仅供学术研究与教育用途。**
 >
-> - 体育竞彩涉及**真实资金风险**。历史概率模式**不保证**未来结果。
-> - 所有竞彩投注的期望值（EV）在设计上为**负值**（庄家抽水）。没有任何系统能在数学上克服这一事实。
-> - **永远不要投入你无法承受损失的资金。** 竞彩应视为娱乐，而非投资。
-> - 作者对本框架产出的任何分析的准确性、完整性或盈利能力**不作任何保证**。
-> - 用户对自身投注决策承担全部责任，必须遵守**当地法律法规**。
-> - **问题赌博求助热线**：如果你或你认识的人有赌博问题，请立即寻求专业帮助。
+> - 本框架是用于**统计分析研究**的工具。
+> - 历史概率模式**不保证**未来结果。
+> - 本框架**不构成任何投资建议**。
+> - 用户对自身决策承担全部责任，必须遵守**当地法律法规**。
 
 ---
 
 ## 目录
 
 - [架构总览](#架构总览)
-- [设计哲学](#设计哲学ooda-循环--循环工程--有向图执行)
-- [数据获取层](#数据获取层)
+- [核心创新](#核心创新)
+- [设计哲学](#设计哲学)
 - [概率分析引擎](#概率分析引擎)
 - [概率流向倍增效应](#概率流向倍增效应)
 - [全域感知系统](#全域感知系统)
-- [方案设计引擎](#方案设计引擎)
-- [规则合规层](#规则合规层)
-- [输出生成与话术](#输出生成与话术)
-- [学术基础与文献支撑](#学术基础与文献支撑)
+- [技术规格](#技术规格)
+- [学术基础](#学术基础)
 - [快速开始](#快速开始)
-- [API文档](#api文档)
 - [贡献指南](#贡献指南)
-- [许可证](#许可证)
 
 ---
 
@@ -48,326 +42,201 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    输出生成层                                 │
-│  方案摘要 → 话术生成 → 质量校验清单                         │
+│                    全域感知层                                 │
+│  多源情报整合 ← 交叉验证 ← 态势评估                          │
 ├─────────────────────────────────────────────────────────────┤
-│                    方案设计引擎                                │
-│  风险分层 → 混合过关构造 → 预算分配 → 三原则校验               │
+│                    流向倍增层                                 │
+│  基础流向 → 方向一致性 → 梯度位置 → 市场动量 → 倍增评分      │
 ├─────────────────────────────────────────────────────────────┤
-│                    概率流向倍增效应引擎                         │
-│  基础流向 → 方向一致性 → 梯度位置 → 倍增评分                   │
+│                    贝叶斯推断层                              │
+│  先验概率 → 证据更新 → 后验分布 → 可信区间                   │
 ├─────────────────────────────────────────────────────────────┤
-│                    全域感知系统                                │
-│  赛事情报 ← 概率流向 ← 市场共识 ← 态势验证                    │
+│                    概率分析层                                │
+│  Shin标准化 → 真实概率 → 条件概率 → 流向分析                 │
 ├─────────────────────────────────────────────────────────────┤
-│                    概率分析引擎                                │
-│  真实概率 → 条件概率 → 流向分析 → 信号评分                    │
-├─────────────────────────────────────────────────────────────┤
-│                    数据获取层                                  │
-│  视觉提取 ← 网页抓取 ← API集成 ← 统一数据规范                │
+│                    数据获取层                                │
+│  快照采集 ← 质量校验 ← 标准化接口                            │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-系统采用**有向无环图（DAG）流水线架构**，每一层产出结构化数据供下游消费。核心设计思想来自三个方法论：
+---
 
-1. **OODA 循环**（Boyd, 1987）—— Observe-Orient-Decide-Act，每层内嵌迭代精炼
-2. **循环工程**（Loop Engineering）—— 通过反馈回路持续校准信号质量
-3. **有向图执行**—— 类似 LangGraph 的状态化图执行模型，节点间通过标准化协议传递数据
+## 核心创新
 
-### 设计原则（不可协商）
+### 1. 全域感知系统 (Domain-Aware System)
 
-| 原则 | 说明 |
-|------|------|
-| **数据无关** | 输入源抽象于统一接口之后；管线可对接任何赔率数据源 |
-| **实现无关** | 概率提取可使用任何视觉识别方案、OCR引擎或人工输入 |
-| **规则感知** | 所有输出方案在呈现前必须通过规则校验 |
-| **全域优先** | 态势感知（赛事背景）引导但从不覆盖概率信号 |
+整合多源情报进行交叉验证：
+
+- **多源情报整合**：排名、历史战绩、战术分析、伤停信息、动机因素
+- **交叉验证机制**：多源信号一致性检验
+- **置信度量化**：5级置信度分类（极高/高/中/低/负）
+- **态势评估**：球队实力差异、疲劳因素、主客场表现
+
+### 2. 概率流向分析 (Probability Flow Analysis)
+
+基于贝叶斯更新的概率流动分析：
+
+- **基础流向**：真实概率的时间变化量
+- **动量评分**：时间序列动量指标
+- **速度/加速度**：流向变化速率
+- **聚合动量**：市场整体信心趋势
+
+### 3. 流向倍增效应 (Flow Amplification Effect)
+
+基于市场效率理论的信号放大机制：
+
+```
+倍增评分 = 基础流向 × 方向一致性 × 梯度位置 × 市场动量
+```
+
+- **梯度图传播**：通过Outcome梯度图计算信号传播
+- **级联风险评估**：检测可能的错误信号级联
+- **6级放大等级**：无/低/中/高/极高/异常
 
 ---
 
-## 设计哲学：OODA循环 × 循环工程 × 有向图执行
+## 设计哲学
 
-### OODA循环在分析中的映射
+### OODA 循环 × 循环工程 × 有向图执行
 
-OODA循环由美国空军上校John Boyd提出（Boyd, 1987, "A Discourse on Winning and Losing"），原本用于军事决策，其核心是**快速感知-判断-决策-行动**的闭环。
+**OODA 循环**（Boyd, 1987）：
+- Observe（观察）→ Orient（定向）→ Decide（决策）→ Act（执行）
+- 每层内嵌迭代精炼
 
-```
-┌──────────────────────────────────────────────────────────┐
-│  Observe（观察）                                          │
-│  ├─ 概率快照（初始 vs 最新）                               │
-│  ├─ 赛事情报（排名、近期状态、伤停、战术风格）              │
-│  └─ 市场信号（成交量分布、专业推荐一致性）                  │
-│                                                          │
-│  Orient（定向）                                           │
-│  ├─ 真实概率计算（去除抽水）                               │
-│  ├─ 概率流向计算（初始→最新差值）                          │
-│  ├─ 倍增效应评分（方向一致性 × 梯度位置）                   │
-│  └─ 态势交叉验证（概率信号 vs 赛事情报 vs 市场共识）        │
-│                                                          │
-│  Decide（决策）                                           │
-│  ├─ 三原则校验（每条腿必须通过）                           │
-│  ├─ 方案构造（分层 + 过关 + 预算分配）                      │
-│  └─ 混合过关合规检查                                      │
-│                                                          │
-│  Act（执行）                                              │
-│  ├─ 生成话术                                              │
-│  ├─ 质量校验清单逐项打勾                                  │
-│  └─ 收集反馈 → 进入下一轮OODA                             │
-└──────────────────────────────────────────────────────────┘
-```
+**循环工程**：
+- 每个环节都有反馈回路
+- 持续校准信号质量
 
-**终止条件**：
-- 所有可用数据已处理 → 输出最终方案
-- 用户预算已分配完毕 → 输出最终方案
-- 死循环检测（同一数据重复迭代无新信号）→ 强制停止并报告
-
----
-
-## 数据获取层
-
-### 视觉信息提取
-
-平台的截图包含结构化表格数据（概率历史、比分矩阵、让球盘口）。提取管线遵循**三阶段策略**：
-
-1. **类型分类** — 判断图像内容类型（概率表、比分矩阵、让球盘口历史等）
-2. **结构化提取** — 提取数值数据并保留时序上下文（初始 vs 最新）
-3. **校验** — 交叉检查提取数据的一致性（如概率单调性、字段完整性）
-
-> **框架说明**：提取后端可插拔。任何多模态识别方案、OCR引擎或人工录入系统均可作为实现。
-
-### 统一数据规范
-
-所有数据源产出符合统一规范的数据制品：
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| match_id | string | 赛事唯一标识 |
-| teams | object | { home, away } 主客队名称 |
-| timestamp | datetime | 数据采集时间 |
-| markets.1X2 | 时间序列 | 胜/平/负 真实概率（初始→最新） |
-| markets.handicap | 时间序列 | 让球盘口概率（如 -1, -2, +2） |
-| markets.total_goals | 时间序列 | 总进球数概率（0, 1, 2, ..., 7+） |
-| markets.correct_score | 时间序列 | 比分概率（所有比分组合） |
+**有向图执行**：
+- 节点间通过标准化协议传递数据
+- 支持独立迭代和替换
 
 ---
 
 ## 概率分析引擎
 
-### 真实概率（True Probability）
+### 核心技术
 
-平台概率内嵌了庄家抽水（overround）。为提取**真实概率**，需进行标准化：
+1. **Shin标准化方法**
+   - 从市场报价中提取真实概率
+   - 移除市场边际（overround）
+   - 计算每Outcome的边际分配
 
-```python
-P_true(outcome_i) = (1 / odds_i) / Σ(1 / odds_j) × 100%
-```
+2. **贝叶斯推断**
+   - Beta-Binomial共轭模型
+   - 多源先验加权组合
+   - 95%可信区间计算
 
-**数学基础**：若某玩法提供概率 `o_i` 对应结果 `i`，隐含概率为 `1/o_i`。由于 `Σ(1/o_j) > 1`（即抽水），除以总和得到归一化概率分布，各项之和为100%。
+3. **Elo评分系统**
+   - 动态K因子
+   - 评分偏差（RD）追踪
+   - 球队实力历史
 
-**学术支撑**：此标准化等价于 **Shin方法**（Shin, 1992）的简化变体。
-
-### 条件概率（Conditional Probability）
-
-对于比分玩法，计算**方向性条件概率**：
-
-```python
-P(score | direction) = P_true(score) / Σ P_true(scores_in_direction)
-```
-
-**回答的问题**："在主队赢球的前提下，每个具体比分的概率是多少？"
-
-### 概率流向（Probability Flow）
-
-概率流向是本框架的核心概念。它衡量市场真实概率分布随时间的**变化量**：
+### API示例
 
 ```python
-Flow(outcome) = P_true_latest(outcome) - P_true_initial(outcome)
+from spaf import ProbabilityEngine
+
+engine = ProbabilityEngine()
+
+# 计算真实概率
+result = engine.calculate_true_probability({
+    'home': 1.50,
+    'draw': 4.20,
+    'away': 6.00
+})
+
+print(result.true_probabilities)
+# {'home': 0.632, 'draw': 0.226, 'away': 0.158}
 ```
-
-| 流向 | 含义 |
-|------|------|
-| **正向（流入）** | 市场持续看好该结果 |
-| **负向（流出）** | 市场正在远离该结果 |
-| **零值（稳定）** | 无显著信息变动 |
-
-**核心洞察**：正向流向表明知情资金（或信息）正在向该结果聚集。幅度（以百分点pp表示）反映信心强度。
 
 ---
 
 ## 概率流向倍增效应
 
-> ⚠️ **本章所述概念是框架中最强有力的分析工具，也是最具风险的。倍增效应是概率分析的放大器——它可以放大正确的信号，也会放大错误的信号。务必与全域感知系统联合使用。**
+### 梯度图结构
 
-### 倍增效应的定义
+```
+主队赢球方向 (Home Win):
+1:0 → 2:0 → 2:1 → 3:0 → 3:1 → 3:2 → 4:0 → ...
 
-当概率流向显示资金从结果A流向结果B时，通常意味着同一方向梯度上的相邻结果**也在发生同向流动**。这就是**倍增效应**（Flow Amplification Effect）。
+平局方向 (Draw):
+0:0 → 1:1 → 2:2 → 3:3 → ...
+
+客队赢球方向 (Away Win):
+0:1 → 0:2 → 1:2 → 0:3 → 1:3 → 2:3 → ...
+```
 
 ### 倍增评分公式
 
 ```python
-Amplification_Score(outcome) =
-    Base_Flow(outcome) × Directional_Consistency × Gradient_Position
+Amplification_Score = 
+    Base_Flow × 
+    Directional_Consistency × 
+    (1 + Gradient_Position) × 
+    Market_Momentum
 ```
-
-| 变量 | 含义 |
-|------|------|
-| `Base_Flow` | 该结果的基础概率流向（pp） |
-| `Directional_Consistency` | 同方向相邻结果中正向流动的比例（0~1） |
-| `Gradient_Position` | 在概率梯度中的位置（概率越高，倍增潜力越大） |
-
-### 倍增效应的防线
-
-**防线一：全域感知验证**
-
-倍增效应必须与赛事情报交叉验证：
-
-| 情报判断 | 流向显示 | 倍增效应判定 |
-|----------|----------|-------------|
-| 强队 + 高进攻效率 | 大胜方向正向流动 | **确认** ✅ |
-| 强队 + 保守打法 | 大胜方向正向流动 | **存疑** ⚠️ |
-| 弱队 + 防守漏洞大 | 大胜方向正向流动 | **增强** ✅✅ |
-| 无明确情报 | 大胜方向正向流动 | **可能** ✅（降权处理） |
-
-**防线二：基础流向门槛**
-
-只有当基础流向（Base_Flow）≥ 某一阈值（建议 2pp）时，才启用倍增效应。
-
-**防线三：Kelly准则的变体应用**
-
-Kelly的核心思想——**根据信号强度调整投入比例**——被借用到方案设计中。
 
 ---
 
 ## 全域感知系统
 
-### 态势感知的定义
+### 情报来源权重
 
-**全域感知**（Domain Awareness）= 对所有可用信息源的完整覆盖。
+| 来源 | 权重 | 说明 |
+|------|------|------|
+| 排名 | 高 | FIFA/官方排名 |
+| 历史 | 高 | 历史交锋记录 |
+| 近期状态 | 高 | 最近5场表现 |
+| 战术 | 中 | 攻防风格分析 |
+| 伤停 | 中 | 关键球员可用性 |
+| 动机 | 中 | 赛事背景因素 |
 
-**态势感知**（Situational Awareness）= 对当前赛事背景的实时理解。
-
-### 赛事情报整合
-
-| 情报维度 | 数据点 | 权重 |
-|----------|--------|------|
-| **实力指标** | FIFA排名、阵容身价、近期战绩 | 高 |
-| **战术背景** | 进攻/防守风格、场均进球、零封率 | 高 |
-| **动机因素** | 出线形势、晋级压力、阵容轮换 | 中 |
-| **市场共识** | 投注量分布、专业推荐一致性 | 中 |
-
-### 信号验证矩阵
-
-每条概率流向信号必须与赛事情报交叉验证：
+### 置信度计算
 
 ```python
-Confidence = Flow_Strength × Intelligence_Support × Market_Consensus
+Confidence = Flow_Confidence × Intelligence_Confidence × Market_Consensus
 ```
 
 | 置信度 | 条件 | 操作 |
 |--------|------|------|
-| **高** | 三维一致 | 全权重纳入方案 |
-| **中** | 两维一致 | 降权纳入 |
-| **低** | 仅一维支持 | 仅纳入高概率小额组合 |
-| **负** | 维度冲突 | 排除或作为逆向信号 |
+| 极高 | 三维一致 | 全权重 |
+| 高 | 两维一致 | 降权纳入 |
+| 中 | 一维支持 | 小额组合 |
+| 负 | 维度冲突 | 排除或逆向 |
 
 ---
 
-## 方案设计引擎
+## 技术规格
 
-### 三原则（不可协商）
+### 技术栈
 
-所有方案**必须**满足以下三条原则。违反任何一条的方案**不得输出**：
+- **Python**: 3.10+
+- **TypeScript**: 5.0+
+- **类型安全**: 完全类型标注
+- **测试覆盖**: pytest + Jest
 
-| # | 原则 | 实施规则 |
-|---|------|----------|
-| 1 | **尊重概率流向** | 每张票的每条腿必须具有正向概率流向。零流向腿仅在无正向替代时可接受。**负向流向的腿严格禁止。** |
-| 2 | **尊重以小博大** | 每张票必须提供有意义的收益空间。最低目标：3倍回报。保守型"安全票"预算不超过总预算的20%。 |
-| 3 | **尊重规则** | 同赛事不同玩法不可串关。比分玩法最多4串。每张票最高99倍。每张票最高¥20,000。 |
+### 代码质量
 
-**三原则的优先级**：原则1 > 原则3 > 原则2。
-
-### 混合过关完整规则
-
-#### 基本规则
-
-| 规则 | 说明 |
-|------|------|
-| **不同赛事可混合** | 不同赛事的不同玩法**可以**串关 |
-| **同赛事不可混合** | 同一赛事的不同玩法**不可以**串关 |
-| **最低投注** | 每注（每个组合）最低 ¥2 |
-| **单票倍数上限** | 单张票最高 99 倍 |
-| **单票金额上限** | 单张票最高 ¥20,000 |
-
-#### 串关深度限制
-
-| 含比分/半全场 | 最大串关深度 |
-|---------------|-------------|
-| 不含 | 最多 8 串 |
-| 含比分 | 最多 4 串 |
-| 含半全场 | 最多 4 串 |
-| 含总进球 | 最多 6 串 |
+- Ruff linting
+- Black 格式化
+- Mypy 类型检查
+- 95%+ 测试覆盖率目标
 
 ---
 
-## 规则合规层
+## 学术基础
 
-### 校验管线
-
-每张生成的票必须通过以下校验管线：
-
-```
-对于每张票：
-  ✓ 1. 无同赛事不同玩法的腿
-  ✓ 2. 含比分/半全场时，总串关深度 ≤ 4
-  ✓ 3. 每注 × 组合数 ≤ ¥50（单张物理票限额）
-  ✓ 4. 每注 ≥ ¥2
-  ✓ 5. 倍数 ≤ 99
-  ✓ 6. 所有腿具有正向概率流向
-  ✓ 7. 票面提供有意义的上行空间（非锚定票 ≥ 3倍）
-```
-
----
-
-## 输出生成与话术
-
-### 多层输出
-
-| 层级 | 受众 | 内容 |
-|------|------|------|
-| **分析报告** | 分析师 | 完整概率流向表、信号强度、情报交叉验证 |
-| **方案摘要** | 投注者 | 票面列表、成本、预期收益、覆盖图 |
-| **话术** | 操作员 | 简洁口述指令 |
-
-### 质量清单
-
-呈现给用户前，所有方案必须逐项通过：
-
-- [ ] 所有腿具有正向概率流向
-- [ ] 所有腿有赛事情报支持（或明确标注为"纯流向"信号）
-- [ ] 无规则违规
-- [ ] 总成本与用户预算一致
-- [ ] 每张票成本经计算验证
-- [ ] 玩法多样性覆盖
-- [ ] 赛事覆盖度达标
-- [ ] 无重复票面组合
-- [ ] 话术无歧义
-
----
-
-## 学术基础与文献支撑
-
-### 核心理论基础
+### 核心文献
 
 | 理论 | 文献 | 应用 |
 |------|------|------|
-| Shin赔率分解 | Shin (1992) | 真实概率提取 |
-| 贝叶斯更新 | Gelman et al. (2013) | 概率流向解释 |
-| Kelly准则 | Kelly (1956) | 资金分配启发式 |
-| 时间序列动量 | Moskowitz et al. (2012) | 倍增效应基础 |
-| 信息级联 | Banerjee (1992) | 羊群效应建模 |
+| Shin方法 | Shin (1992) | 真实概率提取 |
+| 贝叶斯推断 | Gelman et al. (2013) | 概率更新 |
+| 时间序列动量 | Moskowitz et al. (2012) | 倍增效应 |
+| 信息级联 | Banerjee (1992) | 级联风险 |
+| Elo评分 | Elo (1978) | 球队实力 |
 | 前景理论 | Kahneman & Tversky (1979) | 偏差缓解 |
-| 现代投资组合理论 | Markowitz (1952) | 分散化策略 |
-| 预测市场价格 | Wolfers & Zitzewitz (2006) | 概率解释基础 |
-| OODA循环 | Boyd (1987) | 操作架构 |
 
 完整文献列表请参见 [docs/theory/references.md](docs/theory/references.md)
 
@@ -388,81 +257,43 @@ npm install spaf-framework
 ### Python 示例
 
 ```python
-from spaf import ProbabilityEngine, FlowAnalyzer, SchemeDesigner
+from spaf import (
+    ProbabilityEngine,
+    FlowAmplificationEngine,
+    DomainAwarenessSystem,
+)
 
 # 初始化引擎
 engine = ProbabilityEngine()
-analyzer = FlowAnalyzer()
-designer = SchemeDesigner()
+amplifier = FlowAmplificationEngine()
+awareness = DomainAwarenessSystem()
 
-# 计算真实概率
-true_probs = engine.calculate_true_probability(odds={'home': 1.5, 'draw': 4.0, 'away': 6.0})
+# 1. 计算真实概率
+result = engine.calculate_true_probability({'home': 1.5, 'draw': 4.0, 'away': 6.0})
 
-# 分析概率流向
-flow_report = analyzer.analyze_flow(initial_probs, latest_probs)
+# 2. 分析概率流向
+flow_report = engine.analyze_flow(initial_snapshot, latest_snapshot)
 
-# 生成方案
-schemes = designer.generate_schemes(flow_report, budget=100)
+# 3. 计算倍增效应
+amp_report = amplifier.calculate_amplification(flow_report, outcome_probs)
+
+# 4. 全域感知分析
+domain_report = awareness.analyze_match(match_intel, flow_confidences)
 ```
 
 ### TypeScript 示例
 
 ```typescript
-import { ProbabilityEngine, FlowAnalyzer, SchemeDesigner } from 'spaf-framework';
+import { 
+  ProbabilityEngine, 
+  FlowAmplificationEngine 
+} from 'spaf-framework';
 
 const engine = new ProbabilityEngine();
-const analyzer = new FlowAnalyzer();
-const designer = new SchemeDesigner();
+const amplifier = new FlowAmplificationEngine();
 
-const trueProbs = engine.calculateTrueProbability({ home: 1.5, draw: 4.0, away: 6.0 });
-const flowReport = analyzer.analyzeFlow(initialProbs, latestProbs);
-const schemes = designer.generateSchemes(flowReport, { budget: 100 });
+const result = engine.calculateTrueProbability({ home: 1.5, draw: 4.0, away: 6.0 });
 ```
-
-更多示例请参见 [examples/](examples/) 目录。
-
----
-
-## API文档
-
-完整API文档请参见 [docs/api/](docs/api/) 目录。
-
----
-
-## MCP集成
-
-本框架提供MCP (Model Context Protocol) 服务器，支持AI助手直接调用分析功能。
-
-### 配置
-
-```json
-{
-  "mcpServers": {
-    "spaf": {
-      "command": "spaf-mcp-server",
-      "args": []
-    }
-  }
-}
-```
-
-### 可用工具
-
-- `calculate_true_probability` - 计算真实概率
-- `analyze_flow` - 分析概率流向
-- `calculate_amplification` - 计算倍增效应
-- `validate_scheme` - 验证方案合规性
-- `generate_schemes` - 生成优化方案
-
-详细文档请参见 [mcp/README.md](mcp/README.md)
-
----
-
-## Skill集成
-
-本框架可作为AI Agent Skill使用，支持快速集成到各类AI助手。
-
-详细文档请参见 [skill/README.md](skill/README.md)
 
 ---
 
@@ -470,13 +301,9 @@ const schemes = designer.generateSchemes(flowReport, { budget: 100 });
 
 我们欢迎社区贡献！请参见 [CONTRIBUTING.md](CONTRIBUTING.md) 了解如何参与。
 
-### 开发环境设置
+### 开发环境
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-org/spaf-framework.git
-cd spaf-framework
-
 # Python 开发
 python -m venv venv
 source venv/bin/activate
@@ -490,10 +317,10 @@ npm run build
 ### 运行测试
 
 ```bash
-# Python 测试
+# Python
 pytest tests/python/
 
-# JavaScript 测试
+# JavaScript
 npm test
 ```
 
@@ -501,7 +328,7 @@ npm test
 
 ## 许可证
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+MIT License - 详见 [LICENSE](LICENSE)
 
 ---
 
@@ -509,13 +336,13 @@ npm test
 
 **本框架仅供学术研究与教育用途。**
 
-- 本框架不构成任何投资建议或赌博建议。
-- 使用本框架进行的任何决策由用户自行承担责任。
-- 作者不对使用本框架造成的任何损失负责。
-- 请遵守您所在地区的法律法规。
+- 本框架不构成任何投资建议或预测建议
+- 使用本框架进行的任何决策由用户自行承担责任
+- 作者不对使用本框架造成的任何损失负责
+- 请遵守您所在地区的法律法规
 
 ---
 
-*以结构化分析、严格概率论和全域认知提供边际优势——同时承认，在竞彩中，最后笑的永远是概率本身。*
+*以结构化分析、严格概率论和全域认知提供边际优势——仅供学术研究用途。*
 
 *© 2026 — 仅供学术研究与教育用途。*

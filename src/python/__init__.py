@@ -1,18 +1,18 @@
 """
-SPAF - Sports Probability Analysis Framework
+SPAF - Sports Analytics Framework
 
-A domain-aware, situational-awareness-driven, probability-flow-based
-sports prediction optimization system.
+A comprehensive domain-aware, situational-awareness-driven, probability-flow-based
+sports analytics optimization system.
 
 For academic research and educational purposes only.
 
 Example:
-    >>> from spaf import ProbabilityEngine, FlowAnalyzer, SchemeDesigner
+    >>> from spaf import ProbabilityEngine, FlowAmplificationEngine, DomainAwarenessSystem
     >>>
     >>> # Initialize engines
     >>> engine = ProbabilityEngine()
-    >>> analyzer = FlowAnalyzer()
-    >>> designer = SchemeDesigner()
+    >>> amplifier = FlowAmplificationEngine()
+    >>> awareness = DomainAwarenessSystem()
     >>>
     >>> # Calculate true probability
     >>> result = engine.calculate_true_probability({
@@ -26,30 +26,37 @@ Example:
 from .probability_engine import (
     MarketType,
     FlowDirection,
+    IntelligenceSource,
     ProbabilitySnapshot,
     TrueProbabilityResult,
+    BayesianPrior,
+    BayesianPosterior,
     FlowResult,
     FlowReport,
+    EloRating,
     ProbabilityEngine,
 )
 
-from .flow_analyzer import (
+from .flow_amplification import (
     AmplificationLevel,
+    GradientEdge,
+    GradientGraph,
     AmplificationResult,
     AmplificationReport,
-    FlowAnalyzer,
+    FlowAmplificationEngine,
 )
 
-from .scheme_designer import (
-    RiskLevel,
-    ValidationResult,
-    SchemeLeg,
-    Scheme,
-    SchemeBundle,
-    SchemeDesigner,
+from .domain_awareness import (
+    IntelligenceWeight,
+    ConfidenceLevel,
+    IntelligenceRecord,
+    TeamIntelligence,
+    MatchIntelligence,
+    DomainAwarenessReport,
+    DomainAwarenessSystem,
 )
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 __author__ = "SPAF Team"
 __license__ = "MIT"
 
@@ -57,21 +64,28 @@ __all__ = [
     # Probability Engine
     "MarketType",
     "FlowDirection",
+    "IntelligenceSource",
     "ProbabilitySnapshot",
     "TrueProbabilityResult",
+    "BayesianPrior",
+    "BayesianPosterior",
     "FlowResult",
     "FlowReport",
+    "EloRating",
     "ProbabilityEngine",
-    # Flow Analyzer
+    # Flow Amplification
     "AmplificationLevel",
+    "GradientEdge",
+    "GradientGraph",
     "AmplificationResult",
     "AmplificationReport",
-    "FlowAnalyzer",
-    # Scheme Designer
-    "RiskLevel",
-    "ValidationResult",
-    "SchemeLeg",
-    "Scheme",
-    "SchemeBundle",
-    "SchemeDesigner",
+    "FlowAmplificationEngine",
+    # Domain Awareness
+    "IntelligenceWeight",
+    "ConfidenceLevel",
+    "IntelligenceRecord",
+    "TeamIntelligence",
+    "MatchIntelligence",
+    "DomainAwarenessReport",
+    "DomainAwarenessSystem",
 ]
