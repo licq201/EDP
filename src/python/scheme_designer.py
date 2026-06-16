@@ -20,10 +20,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
+from .flow_analyzer import AmplificationReport
 from .probability_engine import FlowDirection, MarketType
-from .flow_analyzer import AmplificationResult, AmplificationReport
 
 
 class RiskLevel(Enum):
@@ -200,7 +199,7 @@ class SchemeDesigner:
         RiskLevel.EXTREME: 0.10,
     }
 
-    def __init__(self, config: Optional[dict] = None):
+    def __init__(self, config: dict | None = None):
         """
         Initialize the scheme designer.
 
@@ -223,12 +222,8 @@ class SchemeDesigner:
 
         # Principle 1: All legs must have positive flow
         if not scheme.has_positive_flow_legs_only():
-            negative_legs = [
-                leg.selection for leg in scheme.legs if not leg.has_positive_flow()
-            ]
-            errors.append(
-                f"Principle 1 violation: Negative flow legs: {negative_legs}"
-            )
+            negative_legs = [leg.selection for leg in scheme.legs if not leg.has_positive_flow()]
+            errors.append(f"Principle 1 violation: Negative flow legs: {negative_legs}")
 
         # Principle 2: Meaningful return
         if not scheme.provides_meaningful_return(self.MIN_RETURN_MULTIPLIER):
@@ -243,18 +238,12 @@ class SchemeDesigner:
             if leg.match_id not in match_markets:
                 match_markets[leg.match_id] = set()
             if leg.market_type in match_markets[leg.match_id]:
-                errors.append(
-                    f"Rule violation: Multiple legs from same match {leg.match_id}"
-                )
+                errors.append(f"Rule violation: Multiple legs from same match {leg.match_id}")
             match_markets[leg.match_id].add(leg.market_type)
 
         # Rule: Parlay depth limits
-        has_score = any(
-            leg.market_type == MarketType.CORRECT_SCORE for leg in scheme.legs
-        )
-        has_htft = any(
-            leg.market_type == MarketType.HALF_TIME_FULL_TIME for leg in scheme.legs
-        )
+        has_score = any(leg.market_type == MarketType.CORRECT_SCORE for leg in scheme.legs)
+        has_htft = any(leg.market_type == MarketType.HALF_TIME_FULL_TIME for leg in scheme.legs)
         max_depth = self.MAX_PARLAY_DEPTH_NO_SCORE
         if has_score or has_htft:
             max_depth = self.MAX_PARLAY_DEPTH_WITH_SCORE
@@ -332,7 +321,7 @@ class SchemeDesigner:
         # This is a simplified example - real implementation would be more sophisticated
         allocated = 0.0
 
-        for i, amp in enumerate(reliable_amps[:max_schemes]):
+        for _i, amp in enumerate(reliable_amps[:max_schemes]):
             # Create a simple single-leg scheme for demonstration
             leg = SchemeLeg(
                 match_id=amplification_report.match_id,
@@ -364,9 +353,7 @@ class SchemeDesigner:
             allocated_budget=allocated,
         )
 
-    def optimize_budget_allocation(
-        self, bundle: SchemeBundle
-    ) -> SchemeBundle:
+    def optimize_budget_allocation(self, bundle: SchemeBundle) -> SchemeBundle:
         """
         Optimize budget allocation across schemes.
 
@@ -379,8 +366,7 @@ class SchemeDesigner:
             Optimized scheme bundle
         """
         total_score = sum(
-            max(s.legs[0].amplification_score, 0.1) if s.legs else 0.1
-            for s in bundle.schemes
+            max(s.legs[0].amplification_score, 0.1) if s.legs else 0.1 for s in bundle.schemes
         )
 
         for scheme in bundle.schemes:

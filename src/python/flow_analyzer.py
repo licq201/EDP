@@ -22,9 +22,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
-from .probability_engine import FlowDirection, FlowReport, FlowResult
+from .probability_engine import FlowDirection, FlowReport
 
 
 class AmplificationLevel(Enum):
@@ -108,7 +107,7 @@ class FlowAnalyzer:
     # Minimum base flow to enable amplification (in percentage points)
     MIN_BASE_FLOW_THRESHOLD = 2.0
 
-    def __init__(self, config: Optional[dict] = None):
+    def __init__(self, config: dict | None = None):
         """
         Initialize the flow analyzer.
 
@@ -116,9 +115,7 @@ class FlowAnalyzer:
             config: Optional configuration dictionary
         """
         self.config = config or {}
-        self.min_base_flow = self.config.get(
-            "min_base_flow", self.MIN_BASE_FLOW_THRESHOLD
-        )
+        self.min_base_flow = self.config.get("min_base_flow", self.MIN_BASE_FLOW_THRESHOLD)
 
     def calculate_directional_consistency(
         self,
@@ -177,9 +174,7 @@ class FlowAnalyzer:
         if outcome not in outcome_probabilities:
             return 0.0
 
-        direction_probs = {
-            o: outcome_probabilities.get(o, 0) for o in direction_outcomes
-        }
+        direction_probs = {o: outcome_probabilities.get(o, 0) for o in direction_outcomes}
 
         if not direction_probs:
             return 0.0
@@ -222,7 +217,7 @@ class FlowAnalyzer:
         flow_report: FlowReport,
         gradient_map: dict[str, list[str]],
         outcome_probabilities: dict[str, float],
-        domain_confidence: Optional[dict[str, float]] = None,
+        domain_confidence: dict[str, float] | None = None,
     ) -> AmplificationReport:
         """
         Calculate amplification effect for all outcomes.
@@ -274,9 +269,7 @@ class FlowAnalyzer:
             # Calculate amplification score
             # Only positive flows get amplified
             if flow_result.direction == FlowDirection.POSITIVE:
-                amplification_score = (
-                    base_flow * directional_consistency * (1 + gradient_position)
-                )
+                amplification_score = base_flow * directional_consistency * (1 + gradient_position)
             else:
                 amplification_score = 0.0
 

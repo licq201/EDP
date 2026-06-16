@@ -83,7 +83,7 @@ Add to your AI agent's skill configuration:
     {
       "name": "spaf-analysis",
       "description": "Sports probability analysis framework",
-      "version": "4.0.0",
+      "version": "4.1.0",
       "entry_point": "spaf.skill:analyze",
       "capabilities": [
         "probability_calculation",

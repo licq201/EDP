@@ -23,37 +23,35 @@ Example:
     >>> print(result.true_probabilities)
 """
 
-from .probability_engine import (
-    MarketType,
-    FlowDirection,
-    IntelligenceSource,
-    ProbabilitySnapshot,
-    TrueProbabilityResult,
-    BayesianPrior,
-    BayesianPosterior,
-    FlowResult,
-    FlowReport,
-    EloRating,
-    ProbabilityEngine,
-)
-
-from .flow_amplification import (
-    AmplificationLevel,
-    GradientEdge,
-    GradientGraph,
-    AmplificationResult,
-    AmplificationReport,
-    FlowAmplificationEngine,
-)
-
 from .domain_awareness import (
-    IntelligenceWeight,
     ConfidenceLevel,
-    IntelligenceRecord,
-    TeamIntelligence,
-    MatchIntelligence,
     DomainAwarenessReport,
     DomainAwarenessSystem,
+    IntelligenceRecord,
+    IntelligenceWeight,
+    MatchIntelligence,
+    TeamIntelligence,
+)
+from .flow_amplification import (
+    AmplificationLevel,
+    AmplificationReport,
+    AmplificationResult,
+    FlowAmplificationEngine,
+    GradientEdge,
+    GradientGraph,
+)
+from .probability_engine import (
+    BayesianPosterior,
+    BayesianPrior,
+    EloRating,
+    FlowDirection,
+    FlowReport,
+    FlowResult,
+    IntelligenceSource,
+    MarketType,
+    ProbabilityEngine,
+    ProbabilitySnapshot,
+    TrueProbabilityResult,
 )
 
 __version__ = "4.1.0"

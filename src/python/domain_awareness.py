@@ -19,27 +19,26 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
-import math
+from typing import Any
 
 
 class IntelligenceWeight(Enum):
     """Intelligence source weights for confidence calculation."""
 
-    CRITICAL = 1.0    # Must have
-    HIGH = 0.8        # Strong indicator
-    MEDIUM = 0.5      # Moderate indicator
-    LOW = 0.3         # Weak indicator
+    CRITICAL = 1.0  # Must have
+    HIGH = 0.8  # Strong indicator
+    MEDIUM = 0.5  # Moderate indicator
+    LOW = 0.3  # Weak indicator
 
 
 class ConfidenceLevel(Enum):
     """Overall confidence level classification."""
 
-    VERY_HIGH = "very_high"   # Strong multi-source confirmation
-    HIGH = "high"            # Good confirmation
-    MEDIUM = "medium"        # Some confirmation
-    LOW = "low"              # Weak signals
-    NEGATIVE = "negative"    # Conflicting signals
+    VERY_HIGH = "very_high"  # Strong multi-source confirmation
+    HIGH = "high"  # Good confirmation
+    MEDIUM = "medium"  # Some confirmation
+    LOW = "low"  # Weak signals
+    NEGATIVE = "negative"  # Conflicting signals
 
 
 @dataclass
@@ -78,28 +77,28 @@ class TeamIntelligence:
 
     team_id: str
     team_name: str
-    ranking: Optional[int] = None
-    ranking_points: Optional[float] = None
-    
+    ranking: int | None = None
+    ranking_points: float | None = None
+
     # Form indicators
     recent_results: list[str] = field(default_factory=list)  # W/D/L sequence
     recent_goals_scored: list[int] = field(default_factory=list)
     recent_goals_conceded: list[int] = field(default_factory=list)
-    
+
     # Tactical indicators
     home_advantage: float = 0.0  # Home performance modifier
     away_performance: float = 0.0  # Away performance modifier
-    
+
     # Availability
     key_players_available: int = 0
     key_players_total: int = 0
     injuries_count: int = 0
-    
+
     # Context
     motivation_factor: float = 1.0  # Tournament context
     travel_distance: float = 0.0  # In km
     rest_days: int = 7  # Days since last match
-    
+
     # Intelligence records
     intelligence_history: list[IntelligenceRecord] = field(default_factory=list)
 
@@ -108,16 +107,16 @@ class TeamIntelligence:
         """Calculate team's recent form score (0-1)."""
         if not self.recent_results:
             return 0.5
-        
+
         scores = []
         for result in self.recent_results[-5:]:  # Last 5 matches
-            if result == 'W':
+            if result == "W":
                 scores.append(1.0)
-            elif result == 'D':
+            elif result == "D":
                 scores.append(0.5)
             else:
                 scores.append(0.0)
-        
+
         return sum(scores) / len(scores) if scores else 0.5
 
     @property
@@ -163,25 +162,25 @@ class MatchIntelligence:
     match_id: str
     home_team: TeamIntelligence
     away_team: TeamIntelligence
-    
+
     # Match context
     competition: str = ""
-    round: Optional[str] = None
+    round: str | None = None
     importance: float = 1.0  # 1 = normal, >1 = important
-    
+
     # Head to head
     h2h_home_wins: int = 0
     h2h_draws: int = 0
     h2h_away_wins: int = 0
     h2h_recent: list[str] = field(default_factory=list)
-    
+
     # Conditions
     weather: str = "unknown"
     venue_neutral: bool = False
-    
+
     # Intelligence records
     match_intelligence: list[IntelligenceRecord] = field(default_factory=list)
-    
+
     # Timestamp
     gathered_at: datetime = field(default_factory=datetime.now)
 
@@ -196,24 +195,24 @@ class MatchIntelligence:
     def get_strength_difference(self) -> float:
         """Calculate relative strength difference (-1 to 1)."""
         home_strength = (
-            self.home_team.form_score * 0.3 +
-            self.home_team.attack_strength * 0.2 +
-            self.home_team.defense_strength * 0.2 +
-            self.home_team.availability_ratio * 0.2 +
-            self.home_team.fatigue_factor * 0.1
+            self.home_team.form_score * 0.3
+            + self.home_team.attack_strength * 0.2
+            + self.home_team.defense_strength * 0.2
+            + self.home_team.availability_ratio * 0.2
+            + self.home_team.fatigue_factor * 0.1
         )
-        
+
         away_strength = (
-            self.away_team.form_score * 0.25 +
-            self.away_team.attack_strength * 0.2 +
-            self.away_team.defense_strength * 0.2 +
-            self.away_team.availability_ratio * 0.2 +
-            self.away_team.fatigue_factor * 0.15
+            self.away_team.form_score * 0.25
+            + self.away_team.attack_strength * 0.2
+            + self.away_team.defense_strength * 0.2
+            + self.away_team.availability_ratio * 0.2
+            + self.away_team.fatigue_factor * 0.15
         )
-        
+
         # Apply home advantage
         home_strength += self.home_team.home_advantage * 0.1
-        
+
         # Normalize to -1 to 1 range
         return (home_strength - away_strength) / max(home_strength + away_strength, 1.0)
 
@@ -237,10 +236,7 @@ class DomainAwarenessReport:
 
     def get_high_confidence_outcomes(self) -> list[str]:
         """Return outcomes with confidence above threshold."""
-        return [
-            outcome for outcome, conf in self.confidence_scores.items()
-            if conf >= 0.7
-        ]
+        return [outcome for outcome, conf in self.confidence_scores.items() if conf >= 0.7]
 
     def get_cross_validated_signals(self) -> dict[str, float]:
         """Return signals that are cross-validated by multiple sources."""
@@ -270,7 +266,7 @@ class DomainAwarenessSystem:
     THRESHOLD_MEDIUM = 0.50
     THRESHOLD_LOW = 0.30
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the domain awareness system.
 
@@ -282,7 +278,7 @@ class DomainAwarenessSystem:
     def assess_intelligence_reliability(
         self,
         intelligence: IntelligenceRecord,
-        context: Optional[dict[str, Any]] = None,
+        context: dict[str, Any] | None = None,
     ) -> float:
         """
         Assess the reliability of a piece of intelligence.
@@ -353,7 +349,7 @@ class DomainAwarenessSystem:
     def integrate_team_intelligence(
         self,
         team_intel: TeamIntelligence,
-        historical_accuracy: Optional[dict[str, float]] = None,
+        historical_accuracy: dict[str, float] | None = None,
     ) -> dict[str, float]:
         """
         Integrate all team intelligence into probability modifiers.
@@ -413,7 +409,7 @@ class DomainAwarenessSystem:
 
         max_signal = max(abs(s) for s in signals.values())
         if max_signal == 0:
-            return {k: False for k in signals.keys()}
+            return dict.fromkeys(signals.keys(), False)
 
         # Normalize signals
         normalized = {k: v / max_signal for k, v in signals.items()}
@@ -465,9 +461,7 @@ class DomainAwarenessSystem:
 
         # Normalize to sum to 1
         total = sum(intelligence_confidence.values())
-        intelligence_confidence = {
-            k: v / total for k, v in intelligence_confidence.items()
-        }
+        intelligence_confidence = {k: v / total for k, v in intelligence_confidence.items()}
 
         # Combine with flow confidence (weighted average)
         flow_weight = 0.6
@@ -483,7 +477,7 @@ class DomainAwarenessSystem:
 
         # Determine overall confidence level
         avg_confidence = sum(combined_confidence.values()) / len(combined_confidence)
-        
+
         if avg_confidence >= self.THRESHOLD_VERY_HIGH:
             overall = ConfidenceLevel.VERY_HIGH
         elif avg_confidence >= self.THRESHOLD_HIGH:
@@ -500,7 +494,7 @@ class DomainAwarenessSystem:
     def analyze_match(
         self,
         match_intel: MatchIntelligence,
-        flow_confidences: Optional[dict[str, float]] = None,
+        flow_confidences: dict[str, float] | None = None,
     ) -> DomainAwarenessReport:
         """
         Perform comprehensive domain awareness analysis for a match.
@@ -552,9 +546,13 @@ class DomainAwarenessSystem:
         strength_diff = match_intel.get_strength_difference()
         if abs(strength_diff) > 0.3:
             if strength_diff > 0:
-                recommendations.append(f"Home team significantly stronger (delta: {strength_diff:.2f})")
+                recommendations.append(
+                    f"Home team significantly stronger (delta: {strength_diff:.2f})"
+                )
             else:
-                recommendations.append(f"Away team significantly stronger (delta: {abs(strength_diff):.2f})")
+                recommendations.append(
+                    f"Away team significantly stronger (delta: {abs(strength_diff):.2f})"
+                )
 
         return DomainAwarenessReport(
             match_id=match_intel.match_id,
@@ -588,9 +586,7 @@ class DomainAwarenessSystem:
         ]
 
         for outcome, confidence in sorted(
-            report.confidence_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
+            report.confidence_scores.items(), key=lambda x: x[1], reverse=True
         ):
             bar = "█" * int(confidence * 20) + "░" * (20 - int(confidence * 20))
             lines.append(f"  {outcome}: {confidence:.1%} |{bar}|")

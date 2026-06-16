@@ -14,12 +14,11 @@ This software is intended for statistical analysis and research.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
-import math
-from collections import defaultdict
+from typing import Any
 
 
 class MarketType(Enum):
@@ -35,21 +34,21 @@ class MarketType(Enum):
 class FlowDirection(Enum):
     """Probability flow direction classification."""
 
-    UPWARD = "upward"      # Market confidence increasing
+    UPWARD = "upward"  # Market confidence increasing
     DOWNWARD = "downward"  # Market confidence decreasing
-    STABLE = "stable"      # No significant change
+    STABLE = "stable"  # No significant change
 
 
 class IntelligenceSource(Enum):
     """Sources of domain intelligence."""
 
-    RANKING = "ranking"           # FIFA/official rankings
-    HISTORICAL = "historical"      # Historical performance
-    RECENT_FORM = "recent_form"   # Recent match results
-    TACTICAL = "tactical"         # Tactical analysis
-    INJURY = "injury"            # Player availability
-    MOTIVATION = "motivation"     # Tournament context
-    MARKET = "market"             # Market consensus
+    RANKING = "ranking"  # FIFA/official rankings
+    HISTORICAL = "historical"  # Historical performance
+    RECENT_FORM = "recent_form"  # Recent match results
+    TACTICAL = "tactical"  # Tactical analysis
+    INJURY = "injury"  # Player availability
+    MOTIVATION = "motivation"  # Tournament context
+    MARKET = "market"  # Market consensus
 
 
 @dataclass
@@ -90,7 +89,7 @@ class TrueProbabilityResult:
     market_margin: float  # Total market margin percentage
     margin_per_outcome: dict[str, float]  # Per-outcome margin
     method: str = "shin_normalized"
-    confidence_interval: Optional[dict[str, tuple[float, float]]] = None
+    confidence_interval: dict[str, tuple[float, float]] | None = None
 
     def get_most_likely_outcome(self) -> tuple[str, float]:
         """Return the outcome with highest true probability."""
@@ -99,11 +98,7 @@ class TrueProbabilityResult:
 
     def get_probability_ranking(self) -> list[tuple[str, float]]:
         """Return outcomes ranked by probability (descending)."""
-        return sorted(
-            self.true_probabilities.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        return sorted(self.true_probabilities.items(), key=lambda x: x[1], reverse=True)
 
 
 @dataclass
@@ -151,7 +146,7 @@ class BayesianPosterior:
     @property
     def variance(self) -> float:
         """Return the variance of the posterior."""
-        return self.std_deviation ** 2
+        return self.std_deviation**2
 
 
 @dataclass
@@ -236,7 +231,7 @@ class EloRating:
     rd: float = 350.0  # Rating deviation (uncertainty)
     volatility: float = 0.06  # Expected fluctuation
     games_played: int = 0
-    last_game_date: Optional[datetime] = None
+    last_game_date: datetime | None = None
     rating_history: list[tuple[datetime, float]] = field(default_factory=list)
 
     K_FACTOR_BASE = 32.0  # Base learning rate
@@ -260,9 +255,9 @@ class EloRating:
         """Update rating after a game."""
         k = self.calculate_k_factor()
         new_rating = self.rating + k * (actual_score - expected_score)
-        
+
         # Update rating deviation
-        new_rd = math.sqrt(self.rd ** 2 + self.volatility ** 2)
+        new_rd = math.sqrt(self.rd**2 + self.volatility**2)
         new_rd = max(min(new_rd, 350.0), 30.0)  # Clamp to reasonable range
 
         self.rating = new_rating
@@ -295,7 +290,7 @@ class ProbabilityEngine:
     FLOW_THRESHOLD_MEDIUM = 2.0
     FLOW_THRESHOLD_HIGH = 5.0
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the probability engine.
 
@@ -303,27 +298,21 @@ class ProbabilityEngine:
             config: Optional configuration dictionary with thresholds and parameters
         """
         self.config = config or {}
-        self.flow_threshold_low = self.config.get(
-            "flow_threshold_low", self.FLOW_THRESHOLD_LOW
-        )
+        self.flow_threshold_low = self.config.get("flow_threshold_low", self.FLOW_THRESHOLD_LOW)
         self.flow_threshold_medium = self.config.get(
             "flow_threshold_medium", self.FLOW_THRESHOLD_MEDIUM
         )
-        self.flow_threshold_high = self.config.get(
-            "flow_threshold_high", self.FLOW_THRESHOLD_HIGH
-        )
-        
+        self.flow_threshold_high = self.config.get("flow_threshold_high", self.FLOW_THRESHOLD_HIGH)
+
         # Bayesian parameters
         self.prior_strength = self.config.get("prior_strength", 1.0)
         self.evidence_weight = self.config.get("evidence_weight", 1.0)
-        
+
         # Elo ratings storage
         self.elo_ratings: dict[str, EloRating] = {}
 
     def calculate_true_probability(
-        self, 
-        implied_quotes: dict[str, float],
-        method: str = "shin_normalized"
+        self, implied_quotes: dict[str, float], method: str = "shin_normalized"
     ) -> TrueProbabilityResult:
         """
         Calculate true probabilities from implied quotes.
@@ -360,10 +349,7 @@ class ProbabilityEngine:
 
         # Normalize to get true probabilities
         total_implied = sum(implied_probs.values())
-        true_probs = {
-            outcome: prob / total_implied
-            for outcome, prob in implied_probs.items()
-        }
+        true_probs = {outcome: prob / total_implied for outcome, prob in implied_probs.items()}
 
         # Calculate 95% confidence intervals (simplified)
         n = len(true_probs)
@@ -400,12 +386,10 @@ class ProbabilityEngine:
         Returns:
             Dictionary of conditional probabilities
         """
-        condition_total = sum(
-            outcome_probabilities.get(o, 0) for o in condition_outcomes
-        )
+        condition_total = sum(outcome_probabilities.get(o, 0) for o in condition_outcomes)
 
         if condition_total == 0:
-            return {o: 0.0 for o in condition_outcomes}
+            return dict.fromkeys(condition_outcomes, 0.0)
 
         return {
             outcome: outcome_probabilities.get(outcome, 0) / condition_total
@@ -444,7 +428,7 @@ class ProbabilityEngine:
 
         # 95% credible interval using quantiles of Beta distribution
         # Using normal approximation for simplicity
-        from math import sqrt
+
         z = 1.96
         lower = max(0, expected_prob - z * std_dev)
         upper = min(1, expected_prob + z * std_dev)
@@ -465,7 +449,7 @@ class ProbabilityEngine:
     def combine_priors(
         self,
         priors: list[BayesianPrior],
-        new_evidence: Optional[dict[str, int]] = None,
+        new_evidence: dict[str, int] | None = None,
     ) -> BayesianPosterior:
         """
         Combine multiple Bayesian priors with weighted averaging.
@@ -478,7 +462,7 @@ class ProbabilityEngine:
             Combined BayesianPosterior
         """
         total_weight = sum(p.weight for p in priors)
-        
+
         # Weighted combination of prior parameters
         combined_alpha = sum(p.alpha * p.weight for p in priors) / total_weight
         combined_beta = sum(p.beta * p.weight for p in priors) / total_weight
@@ -493,8 +477,9 @@ class ProbabilityEngine:
             posterior_beta=combined_beta,
             expected_probability=combined_alpha / (combined_alpha + combined_beta),
             std_deviation=math.sqrt(
-                combined_alpha * combined_beta /
-                ((combined_alpha + combined_beta) ** 2 * (combined_alpha + combined_beta + 1))
+                combined_alpha
+                * combined_beta
+                / ((combined_alpha + combined_beta) ** 2 * (combined_alpha + combined_beta + 1))
             ),
             credible_interval=(0, 1),  # Would need proper Beta quantiles
             update_evidence={"combined_priors": len(priors)},
@@ -526,9 +511,6 @@ class ProbabilityEngine:
         home_elo = self.get_or_create_elo(home_team)
         away_elo = self.get_or_create_elo(away_team)
 
-        # Apply home advantage
-        adjusted_home = home_elo.rating + home_advantage
-
         # Calculate expected scores
         home_expected = home_elo.expected_score(away_elo.rating)
         away_expected = 1.0 - home_expected
@@ -541,7 +523,7 @@ class ProbabilityEngine:
 
         # Normalize to sum to 1
         total = home_win_prob + draw_prob + away_win_prob
-        
+
         return {
             "home_win": home_win_prob / total,
             "draw": draw_prob / total,
@@ -596,7 +578,7 @@ class ProbabilityEngine:
         self,
         initial_snapshot: ProbabilitySnapshot,
         latest_snapshot: ProbabilitySnapshot,
-        historical_snapshots: Optional[list[ProbabilitySnapshot]] = None,
+        historical_snapshots: list[ProbabilitySnapshot] | None = None,
     ) -> FlowReport:
         """
         Analyze probability flow between time points with momentum analysis.
@@ -654,9 +636,11 @@ class ProbabilityEngine:
 
             if historical_snapshots:
                 # Simplified momentum calculation
-                momentum_score = flow_pp * len(historical_snapshots) / max(len(historical_snapshots), 1)
+                momentum_score = (
+                    flow_pp * len(historical_snapshots) / max(len(historical_snapshots), 1)
+                )
                 velocity = flow_pp / max(time_delta.total_seconds() / 3600, 1)
-                
+
                 if len(historical_snapshots) >= 2:
                     # Acceleration is change in velocity
                     acceleration = velocity * 0.1  # Simplified

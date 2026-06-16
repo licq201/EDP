@@ -4,7 +4,7 @@
 >
 > **基于态势感知、概率流向与贝叶斯更新的竞彩方案优化系统**
 
-![Version](https://img.shields.io/badge/Version-4.0-blue)
+![Version](https://img.shields.io/badge/Version-4.1-blue)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-green)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)

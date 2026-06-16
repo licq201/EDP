@@ -197,7 +197,7 @@ export class ProbabilityEngine {
   private readonly flowThresholdMedium: number = 2.0;
   private readonly flowThresholdHigh: number = 5.0;
 
-  constructor(private config?: {
+  constructor(config?: {
     flowThresholdLow?: number;
     flowThresholdMedium?: number;
     flowThresholdHigh?: number;
@@ -312,7 +312,7 @@ export class ProbabilityEngine {
 
     // Calculate flow for each outcome
     for (const outcome of Object.keys(initialTrue.trueProbabilities)) {
-      const initialProb = initialTrue.trueProbabilities[outcome];
+      const initialProb = initialTrue.trueProbabilities[outcome] ?? 0;
       const latestProb = latestTrue.trueProbabilities[outcome] ?? initialProb;
       const flowPp = (latestProb - initialProb) * 100; // Convert to percentage points
 
@@ -376,7 +376,7 @@ export class FlowAnalyzer {
   private readonly amplificationThresholdVeryHigh: number = 10.0;
   private readonly minBaseFlow: number = 2.0;
 
-  constructor(private config?: {
+  constructor(config?: {
     minBaseFlow?: number;
     amplificationThresholdLow?: number;
     amplificationThresholdMedium?: number;
@@ -391,7 +391,7 @@ export class FlowAnalyzer {
    */
   private calculateDirectionalConsistency(
     flowReport: IFlowReport,
-    outcome: string,
+    _outcome: string,
     adjacentOutcomes: string[]
   ): number {
     if (!adjacentOutcomes || adjacentOutcomes.length === 0) {
@@ -425,7 +425,7 @@ export class FlowAnalyzer {
 
     const directionProbs = directionOutcomes
       .filter((o) => o in outcomeProbabilities)
-      .map((o) => outcomeProbabilities[o]);
+      .map((o) => outcomeProbabilities[o] ?? 0);
 
     if (directionProbs.length === 0) {
       return 0;
@@ -439,7 +439,7 @@ export class FlowAnalyzer {
     }
 
     // Invert: lower probability = higher position
-    const outcomeProb = outcomeProbabilities[outcome];
+    const outcomeProb = outcomeProbabilities[outcome] ?? 0;
     return (maxProb - outcomeProb) / (maxProb - minProb);
   }
 
@@ -562,7 +562,6 @@ export class SchemeDesigner {
   private readonly maxParlayDepthNoScore = 8;
   private readonly maxParlayDepthWithScore = 4;
   private readonly maxMultiplier = 99;
-  private readonly maxTicketAmount = 20000;
   private readonly minStake = 2.0;
   private readonly minReturnMultiplier = 3.0;
 
@@ -670,7 +669,7 @@ export class SchemeDesigner {
   generateSchemes(
     amplificationReport: IAmplificationReport,
     budget: number,
-    matchData: { matchId: string; homeTeam: string; awayTeam: string },
+    _matchData: { matchId: string; homeTeam: string; awayTeam: string },
     maxSchemes: number = 10
   ): ISchemeBundle {
     const schemes: IScheme[] = [];
@@ -684,6 +683,7 @@ export class SchemeDesigner {
 
     for (let i = 0; i < Math.min(reliableAmps.length, maxSchemes); i++) {
       const amp = reliableAmps[i];
+      if (!amp) continue;
 
       // Create a simple single-leg scheme
       const leg: ISchemeLeg = {
@@ -707,7 +707,7 @@ export class SchemeDesigner {
       };
 
       // Validate
-      const [result, errors] = this.validateScheme(scheme);
+      const [result, _errors] = this.validateScheme(scheme);
       if (result === ValidationResult.VALID) {
         schemes.push(scheme);
         allocated += scheme.stakePerCombination * scheme.multiplier;

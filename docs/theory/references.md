@@ -151,7 +151,7 @@ If you use this framework in academic work, please cite:
   author = {SPAF Team},
   title = {SPAF: Sports Probability Analysis Framework},
   year = {2026},
-  version = {4.0.0},
+  version = {4.1.0},
   url = {https://github.com/your-org/spaf-framework}
 }
 ```

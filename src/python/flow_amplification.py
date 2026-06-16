@@ -18,8 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
-import math
+from typing import Any
 
 
 class AmplificationLevel(Enum):
@@ -65,14 +64,14 @@ class GradientGraph:
             self.nodes.append(source)
         if target not in self.nodes:
             self.nodes.append(target)
-        
+
         edge = GradientEdge(
             source_outcome=source,
             target_outcome=target,
             distance=distance,
         )
         self.edges.append(edge)
-        
+
         if source not in self.adjacency_map:
             self.adjacency_map[source] = []
         self.adjacency_map[source].append(target)
@@ -82,25 +81,25 @@ class GradientGraph:
         return self.adjacency_map.get(outcome, [])
 
     @staticmethod
-    def build_correct_score_gradient() -> "GradientGraph":
+    def build_correct_score_gradient() -> GradientGraph:
         """Build gradient graph for correct score market."""
         graph = GradientGraph()
-        
+
         # Home win direction (increasing margin)
         home_scores = ["1:0", "2:0", "2:1", "3:0", "3:1", "3:2", "4:0", "4:1", "4:2", "4:3"]
         for i in range(len(home_scores) - 1):
             graph.add_edge(home_scores[i], home_scores[i + 1], distance=1.0)
-        
+
         # Draw direction
         draws = ["0:0", "1:1", "2:2", "3:3"]
         for i in range(len(draws) - 1):
             graph.add_edge(draws[i], draws[i + 1], distance=1.0)
-        
+
         # Away win direction
         away_scores = ["0:1", "0:2", "1:2", "0:3", "1:3", "2:3", "0:4", "1:4", "2:4", "3:4"]
         for i in range(len(away_scores) - 1):
             graph.add_edge(away_scores[i], away_scores[i + 1], distance=1.0)
-        
+
         # Cross-direction edges (smaller probability)
         graph.add_edge("1:0", "1:1", distance=2.0)  # Home to Draw
         graph.add_edge("1:1", "0:1", distance=2.0)  # Draw to Away
@@ -108,7 +107,7 @@ class GradientGraph:
         graph.add_edge("2:1", "2:2", distance=2.0)
         graph.add_edge("3:0", "3:1", distance=1.5)
         graph.add_edge("3:1", "3:2", distance=1.5)
-        
+
         return graph
 
 
@@ -137,10 +136,7 @@ class AmplificationResult:
 
     def is_reliable(self, min_confidence: float = 0.5) -> bool:
         """Check if amplification result is reliable enough for use."""
-        return (
-            self.confidence >= min_confidence and 
-            self.level != AmplificationLevel.NONE
-        )
+        return self.confidence >= min_confidence and self.level != AmplificationLevel.NONE
 
     def get_signal_strength(self) -> float:
         """Calculate overall signal strength (0-1)."""
@@ -165,18 +161,17 @@ class AmplificationReport:
     def get_high_amplification(self) -> list[AmplificationResult]:
         """Return outcomes with high or very high amplification."""
         return [
-            a for a in self.amplifications
-            if a.level in (
-                AmplificationLevel.HIGH, 
+            a
+            for a in self.amplifications
+            if a.level
+            in (
+                AmplificationLevel.HIGH,
                 AmplificationLevel.VERY_HIGH,
-                AmplificationLevel.EXCEPTIONAL
+                AmplificationLevel.EXCEPTIONAL,
             )
         ]
 
-    def get_reliable_amplifications(
-        self, 
-        min_confidence: float = 0.5
-    ) -> list[AmplificationResult]:
+    def get_reliable_amplifications(self, min_confidence: float = 0.5) -> list[AmplificationResult]:
         """Return all reliable amplification results."""
         return [a for a in self.amplifications if a.is_reliable(min_confidence)]
 
@@ -190,7 +185,7 @@ class AmplificationReport:
         for amp in self.get_high_amplification():
             if amp.propagation_depth > 1:
                 cascading[amp.outcome] = [
-                    adj[0] for adj in amp.adjacent_signals[:amp.propagation_depth]
+                    adj[0] for adj in amp.adjacent_signals[: amp.propagation_depth]
                 ]
         return cascading
 
@@ -225,7 +220,7 @@ class FlowAmplificationEngine:
     # Momentum factors
     CROSS_MARKET_MOMENTUM_WINDOW = 3  # Number of adjacent outcomes to check
 
-    def __init__(self, config: Optional[dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         """
         Initialize the flow amplification engine.
 
@@ -233,9 +228,7 @@ class FlowAmplificationEngine:
             config: Optional configuration dictionary
         """
         self.config = config or {}
-        self.min_base_flow = self.config.get(
-            "min_base_flow", self.MIN_BASE_FLOW_THRESHOLD
-        )
+        self.min_base_flow = self.config.get("min_base_flow", self.MIN_BASE_FLOW_THRESHOLD)
         self.confidence_decay = self.config.get("confidence_decay", 0.9)
 
     def calculate_directional_consistency(
@@ -262,12 +255,12 @@ class FlowAmplificationEngine:
             return 0.0
 
         outcome_direction = flow_directions.get(outcome, "stable")
-        
+
         # Count adjacent with same or supportive direction
         consistent_count = 0
         for adj in adjacent_outcomes:
             adj_direction = flow_directions.get(adj, "stable")
-            
+
             if outcome_direction == "upward":
                 # Upward is supported by upward or slight stable drift
                 if adj_direction in ("upward", "stable"):
@@ -310,9 +303,7 @@ class FlowAmplificationEngine:
         if outcome not in outcome_probabilities:
             return 0.0
 
-        direction_probs = [
-            outcome_probabilities.get(o, 0) for o in direction_outcomes
-        ]
+        direction_probs = [outcome_probabilities.get(o, 0) for o in direction_outcomes]
 
         if not direction_probs or max(direction_probs) == 0:
             return 0.5
@@ -359,14 +350,14 @@ class FlowAmplificationEngine:
         for adj_outcome, adj_flow in adjacent_flows:
             # Weighted by probability (higher prob = more influence)
             weight = outcome_probabilities.get(adj_outcome, 0.1)
-            
+
             # Sign indicates same or opposite direction
             sign = 1.0 if (flow_pp >= 0) == (adj_flow >= 0) else -1.0
             momentum_sum += sign * abs(adj_flow) * weight
 
         # Normalize to 0.5-1.5 range
         avg_momentum = momentum_sum / len(adjacent_flows) if adjacent_flows else 0.0
-        
+
         # Map to multiplier
         if avg_momentum > 3.0:
             return 1.5
@@ -386,7 +377,7 @@ class FlowAmplificationEngine:
         direction: str,
         gradient_graph: GradientGraph,
         flow_directions: dict[str, str],
-        visited: Optional[set[str]] = None,
+        visited: set[str] | None = None,
         max_depth: int = 3,
     ) -> tuple[int, list[tuple[str, float]]]:
         """
@@ -414,16 +405,16 @@ class FlowAmplificationEngine:
 
         visited.add(outcome)
         adjacent = gradient_graph.get_adjacent_outcomes(outcome)
-        
+
         depth = 0
         signals = []
-        
+
         for adj_outcome in adjacent:
             if adj_outcome in visited:
                 continue
-                
+
             adj_direction = flow_directions.get(adj_outcome, "stable")
-            
+
             # Check if flow would propagate (same or supporting direction)
             if direction == "upward" and adj_direction in ("upward", "stable"):
                 depth = 1
@@ -432,7 +423,7 @@ class FlowAmplificationEngine:
             elif direction == "downward" and adj_direction in ("downward", "stable"):
                 depth = 1
                 signals.append((adj_outcome, flow_pp * 0.7))
-        
+
         return depth, signals
 
     def classify_amplification_level(self, score: float) -> AmplificationLevel:
@@ -462,13 +453,13 @@ class FlowAmplificationEngine:
         self,
         flow_report,  # FlowReport from probability_engine
         outcome_probabilities: dict[str, float],
-        gradient_graph: Optional[GradientGraph] = None,
-        confidence_modifiers: Optional[dict[str, float]] = None,
+        gradient_graph: GradientGraph | None = None,
+        confidence_modifiers: dict[str, float] | None = None,
     ) -> AmplificationReport:
         """
         Calculate amplification effect for all outcomes.
 
-        Amplification_Score = Base_Flow × Directional_Consistency × 
+        Amplification_Score = Base_Flow × Directional_Consistency ×
                               Gradient_Position × Market_Momentum
 
         Args:
@@ -487,10 +478,7 @@ class FlowAmplificationEngine:
         confidence_modifiers = confidence_modifiers or {}
 
         # Build flow direction map
-        flow_directions = {
-            f.outcome: f.direction.value 
-            for f in flow_report.flows
-        }
+        flow_directions = {f.outcome: f.direction.value for f in flow_report.flows}
 
         amplifications = []
 
@@ -526,19 +514,16 @@ class FlowAmplificationEngine:
 
             # Get all outcomes in same direction for gradient position
             direction_outcomes = [
-                o for o, d in flow_directions.items() 
-                if d == flow_result.direction.value
+                o for o, d in flow_directions.items() if d == flow_result.direction.value
             ]
-            
+
             gradient_position = self.calculate_gradient_position(
                 outcome, outcome_probabilities, direction_outcomes
             )
 
             # Calculate adjacent flows for momentum
             adjacent_flows = [
-                (f.outcome, f.flow_pp) 
-                for f in flow_report.flows 
-                if f.outcome in adjacent
+                (f.outcome, f.flow_pp) for f in flow_report.flows if f.outcome in adjacent
             ]
 
             market_momentum = self.calculate_market_momentum(
@@ -549,10 +534,7 @@ class FlowAmplificationEngine:
             if flow_result.direction.value == "upward":
                 # Only positive flows get amplified
                 amplification_score = (
-                    base_flow * 
-                    directional_consistency * 
-                    (1 + gradient_position) * 
-                    market_momentum
+                    base_flow * directional_consistency * (1 + gradient_position) * market_momentum
                 )
             else:
                 amplification_score = 0.0
@@ -589,9 +571,9 @@ class FlowAmplificationEngine:
             )
 
         # Calculate aggregate momentum
-        aggregate_momentum = sum(
-            a.amplification_score for a in amplifications
-        ) / max(len(amplifications), 1)
+        aggregate_momentum = sum(a.amplification_score for a in amplifications) / max(
+            len(amplifications), 1
+        )
 
         # Calculate cascade risk (high momentum with low consistency = risky)
         high_momentum = [a for a in amplifications if a.amplification_score > 5.0]
