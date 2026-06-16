@@ -1,49 +1,42 @@
 """
-SPAF - Sports Analytics Framework
+EDP - 期望域感知法 (Expectation Domain Perception Method)
 
-A comprehensive domain-aware, situational-awareness-driven, probability-flow-based
-sports analytics optimization system.
+基于多源情报融合 (Multi-Source Intelligence Fusion)、态势感知 (Situation Awareness)、
+概率分析 (Probability Analysis)、贝叶斯推断 (Bayesian Inference) 与 Shin 方法
+(Shin's Method) 的域感知概率推断框架。
 
-For academic research and educational purposes only.
+本框架将来自不同情报源的观测证据通过域感知引擎进行一致性评估与可靠性加权，
+经由贝叶斯推断形成后验概率分布，并利用概率流梯度图对后验空间进行放大分析，
+最终输出可验证的期望域分配方案。
+
+For academic research purposes only.
 
 Example:
-    >>> from spaf import ProbabilityEngine, FlowAmplificationEngine, DomainAwarenessSystem
+    >>> from edp import (
+    ...     ProbabilityEngine,
+    ...     FlowAmplificationEngine,
+    ...     DomainAwarenessEngine,
+    ...     AllocationEngine,
+    ... )
     >>>
-    >>> # Initialize engines
+    >>> # 初始化各核心引擎
     >>> engine = ProbabilityEngine()
     >>> amplifier = FlowAmplificationEngine()
-    >>> awareness = DomainAwarenessSystem()
+    >>> awareness = DomainAwarenessEngine()
+    >>> allocator = AllocationEngine()
     >>>
-    >>> # Calculate true probability
+    >>> # 基于观测赔率计算真实概率（Shin 方法）
     >>> result = engine.calculate_true_probability({
-    ...     'home': 1.50,
-    ...     'draw': 4.20,
-    ...     'away': 6.00
+    ...     'outcome_a': 1.50,
+    ...     'outcome_b': 4.20,
+    ...     'outcome_c': 6.00,
     ... })
     >>> print(result.true_probabilities)
 """
 
-from .domain_awareness import (
-    ConfidenceLevel,
-    DomainAwarenessReport,
-    DomainAwarenessSystem,
-    IntelligenceRecord,
-    IntelligenceWeight,
-    MatchIntelligence,
-    TeamIntelligence,
-)
-from .flow_amplification import (
-    AmplificationLevel,
-    AmplificationReport,
-    AmplificationResult,
-    FlowAmplificationEngine,
-    GradientEdge,
-    GradientGraph,
-)
 from .probability_engine import (
     BayesianPosterior,
     BayesianPrior,
-    EloRating,
     FlowDirection,
     FlowReport,
     FlowResult,
@@ -53,13 +46,37 @@ from .probability_engine import (
     ProbabilitySnapshot,
     TrueProbabilityResult,
 )
+from .flow_amplification import (
+    AmplificationLevel,
+    AmplificationReport,
+    AmplificationResult,
+    FlowAmplificationEngine,
+    GradientEdge,
+    GradientGraph,
+)
+from .domain_awareness import (
+    DomainAwarenessEngine,
+    EvidenceSource,
+    EvidenceType,
+    SituationAssessment,
+    SourceReliability,
+    StabilityStatus,
+)
+from .scheme_designer import (
+    Allocation,
+    AllocationBundle,
+    AllocationEngine,
+    AllocationLeg,
+    RiskLevel,
+    ValidationResult,
+)
 
 __version__ = "4.1.0"
-__author__ = "SPAF Team"
+__author__ = "EDP Research Team"
 __license__ = "MIT"
 
 __all__ = [
-    # Probability Engine
+    # Probability Engine — 概率分析与贝叶斯推断
     "MarketType",
     "FlowDirection",
     "IntelligenceSource",
@@ -69,21 +86,26 @@ __all__ = [
     "BayesianPosterior",
     "FlowResult",
     "FlowReport",
-    "EloRating",
     "ProbabilityEngine",
-    # Flow Amplification
+    # Flow Amplification — 概率流梯度放大
     "AmplificationLevel",
     "GradientEdge",
     "GradientGraph",
     "AmplificationResult",
     "AmplificationReport",
     "FlowAmplificationEngine",
-    # Domain Awareness
-    "IntelligenceWeight",
-    "ConfidenceLevel",
-    "IntelligenceRecord",
-    "TeamIntelligence",
-    "MatchIntelligence",
-    "DomainAwarenessReport",
-    "DomainAwarenessSystem",
+    # Domain Awareness — 多源情报融合与态势感知
+    "EvidenceType",
+    "SourceReliability",
+    "StabilityStatus",
+    "EvidenceSource",
+    "SituationAssessment",
+    "DomainAwarenessEngine",
+    # Scheme Designer — 期望域分配与风险验证
+    "RiskLevel",
+    "ValidationResult",
+    "AllocationLeg",
+    "Allocation",
+    "AllocationBundle",
+    "AllocationEngine",
 ]

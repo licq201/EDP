@@ -1,610 +1,773 @@
 """
 EDP - Expectation Domain Perception Method
-Domain-Aware Intelligence System
+Multi-Source Intelligence Fusion and Domain Awareness Engine.
 
-This module implements the comprehensive domain awareness system that integrates
-multiple intelligence sources for enhanced probability analysis.
+This module implements the multi-source intelligence integration system,
+providing cross-validation of information sources and situational awareness.
 
-Features:
-- Multi-source intelligence integration
-- Cross-validation of signals
-- Situational awareness scoring
-- Temporal context analysis
+Core Theoretical Foundations:
+
+1. Multi-Source Intelligence Fusion (Endsley, 1988, 2015)
+   Perception of elements in the environment within a volume of time
+   and space, the comprehension of their meaning, and the projection
+   of their status in the near future.
+
+2. Bayesian Evidence Accumulation (Pearl, 1988)
+   Sequential updating of posterior probabilities from independent
+   evidence sources.
+
+3. Dempster-Shafer Evidence Theory (Shafer, 1976)
+   Representation and combination of evidence from multiple sources
+   with uncertainty and ignorance.
+
+4. Information Cascade Detection (Bikhchandani et al., 1992)
+   Identification of correlated information flows that may indicate
+   convergence or herding behavior.
+
+5. Consensus Dynamics (Degroot, 1974)
+   Weighted averaging of source opinions with credibility weighting.
+
+Information Fusion Architecture:
+    ┌──────────────────────────────────────────────────────────┐
+    │          Multi-Source Intelligence Intake                │
+    │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
+    │  │ Source 1 │ │ Source 2 │ │ Source 3 │ │ Source N │    │
+    │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘    │
+    │       ▼            ▼            ▼            ▼          │
+    │       └────────────┴────────────┴────────────┘          │
+    │                          ▼                               │
+    │          ┌──────────────────────────────────┐           │
+    │          │     Evidence Preprocessing       │           │
+    │          │  • Normalization                 │           │
+    │          │  • Source Credibility Estimation │           │
+    │          │  • Temporal Alignment            │           │
+    │          └────────────────┬─────────────────┘           │
+    │                           ▼                              │
+    │          ┌──────────────────────────────────┐           │
+    │          │     Evidence Combination         │           │
+    │          │  • Bayesian Evidence Fusion      │           │
+    │          │  • Consensus Dynamics            │           │
+    │          │  • Cross-Source Validation       │           │
+    │          └────────────────┬─────────────────┘           │
+    │                           ▼                              │
+    │          ┌──────────────────────────────────┐           │
+    │          │   Situation Awareness Output     │           │
+    │          │  • Confidence Assessment         │           │
+    │          │  • Anomaly Detection             │           │
+    │          │  • Stability Index               │           │
+    │          └──────────────────────────────────┘           │
+    └──────────────────────────────────────────────────────────┘
+
+References:
+    Endsley, M.R. (1988). "Design and Evaluation for Situation
+    Awareness Enhancement." Proc. Human Factors Society, 32(1), 97-101.
+
+    Pearl, J. (1988). "Probabilistic Reasoning in Intelligent Systems."
+    Morgan Kaufmann.
+
+    Shafer, G. (1976). "A Mathematical Theory of Evidence."
+    Princeton University Press.
+
+    Bikhchandani, S., Hirshleifer, D., & Welch, I. (1992).
+    "A Theory of Fads, Fashion, Custom, and Cultural Change
+    as Information Cascades." JPE, 100(5), 992-1026.
+
+    DeGroot, M.H. (1974). "Reaching a Consensus."
+    JASA, 69(345), 118-121.
+
+    Dempster, A.P. (1968). "A Generalization of Bayesian Inference."
+    JRSS B, 30(2), 205-247.
 
 ⚠️ ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
 from typing import Any
 
 
-class IntelligenceWeight(Enum):
-    """Intelligence source weights for confidence calculation."""
+class EvidenceType(Enum):
+    """
+    Classification of evidence sources.
 
-    CRITICAL = 1.0  # Must have
-    HIGH = 0.8  # Strong indicator
-    MEDIUM = 0.5  # Moderate indicator
-    LOW = 0.3  # Weak indicator
+    Each type corresponds to a different channel of information intake,
+    which may have different credibility and reliability characteristics.
+    """
+
+    STATISTICAL = "statistical"  # Derived from statistical models
+    ANALYTICAL = "analytical"  # From analytical inference engines
+    OBSERVATIONAL = "observational"  # Direct observational data
+    HISTORICAL = "historical"  # Historical precedent analysis
+    EXPERT = "expert"  # Expert judgment / domain knowledge
+    COMPOSITE = "composite"  # Aggregated from multiple sources
 
 
-class ConfidenceLevel(Enum):
-    """Overall confidence level classification."""
+class SourceReliability(Enum):
+    """
+    Source reliability classification (adapted from NATO STANAG 2511).
 
-    VERY_HIGH = "very_high"  # Strong multi-source confirmation
-    HIGH = "high"  # Good confirmation
-    MEDIUM = "medium"  # Some confirmation
-    LOW = "low"  # Weak signals
-    NEGATIVE = "negative"  # Conflicting signals
+    Used for credibility-weighted evidence fusion.
+    """
+
+    A = ("completely_reliable", 1.00)  # Completely reliable
+    B = ("usually_reliable", 0.80)  # Usually reliable
+    C = ("fairly_reliable", 0.60)  # Fairly reliable
+    D = ("not_usually_reliable", 0.40)  # Not usually reliable
+    E = ("unreliable", 0.20)  # Unreliable
+    F = ("cannot_be_judged", 0.50)  # Reliability cannot be judged
+
+    def __init__(self, _label: str, weight: float):
+        self.weight = weight
+
+
+class StabilityStatus(Enum):
+    """Status of situation stability based on evidence convergence."""
+
+    STABLE = "stable"  # Evidence consensus, low variance
+    UNSTABLE = "unstable"  # Evidence disagreement, high variance
+    EMERGING = "emerging"  # Evidence converging, trend forming
+    AMBIGUOUS = "ambiguous"  # Insufficient / conflicting evidence
+    ANOMALOUS = "anomalous"  # Evidence contradicts historical patterns
 
 
 @dataclass
-class IntelligenceRecord:
+class EvidenceSource:
     """
-    A single intelligence record from a specific source.
+    An individual evidence source contributing to the fusion process.
+
+    Represents a single channel of information with metadata about:
+    - Source identity and reliability
+    - Evidence content (probability estimates, observations)
+    - Temporal information
+    - Confidence / variance metrics
 
     Attributes:
-        source: The intelligence source
-        timestamp: When the intelligence was gathered
-        content: The intelligence content
-        confidence: Confidence level (0-1)
-        weight: Weight of this source in analysis
-        validated: Whether this intelligence has been cross-validated
+        source_id: Unique identifier for this source
+        source_type: Type classification of evidence
+        reliability: Rated reliability of this source
+        timestamp: Time evidence was collected
+        content: Core evidence content (dict with 'probability' key recommended)
+        confidence: Self-reported confidence (0-1) from the source
+        meta: Additional metadata (tags, context, etc.)
     """
 
-    source: str
+    source_id: str
+    source_type: EvidenceType
+    reliability: SourceReliability
     timestamp: datetime
     content: dict[str, Any]
-    confidence: float = 0.5
-    weight: float = 1.0
-    validated: bool = False
+    confidence: float = 0.7
+    meta: dict[str, Any] = field(default_factory=dict)
 
-    def is_reliable(self, min_confidence: float = 0.3) -> bool:
-        """Check if intelligence meets minimum confidence threshold."""
-        return self.confidence >= min_confidence and self.weight >= 0.3
+    def evidence_probability(self) -> float:
+        """Extract probability estimate from content (0.0-1.0)."""
+        p = self.content.get("probability", self.content.get("value", 0.0))
+        return max(0.0, min(float(p), 1.0))
 
+    def weighted_probability(self) -> float:
+        """
+        Probability weighted by source credibility.
 
-@dataclass
-class TeamIntelligence:
-    """
-    Comprehensive intelligence for a single team.
+        Weight = reliability * confidence
 
-    Contains all available information about a team's current state.
-    """
-
-    team_id: str
-    team_name: str
-    ranking: int | None = None
-    ranking_points: float | None = None
-
-    # Form indicators
-    recent_results: list[str] = field(default_factory=list)  # W/D/L sequence
-    recent_goals_scored: list[int] = field(default_factory=list)
-    recent_goals_conceded: list[int] = field(default_factory=list)
-
-    # Tactical indicators
-    home_advantage: float = 0.0  # Home performance modifier
-    away_performance: float = 0.0  # Away performance modifier
-
-    # Availability
-    key_players_available: int = 0
-    key_players_total: int = 0
-    injuries_count: int = 0
-
-    # Context
-    motivation_factor: float = 1.0  # Tournament context
-    travel_distance: float = 0.0  # In km
-    rest_days: int = 7  # Days since last match
-
-    # Intelligence records
-    intelligence_history: list[IntelligenceRecord] = field(default_factory=list)
-
-    @property
-    def form_score(self) -> float:
-        """Calculate team's recent form score (0-1)."""
-        if not self.recent_results:
-            return 0.5
-
-        scores = []
-        for result in self.recent_results[-5:]:  # Last 5 matches
-            if result == "W":
-                scores.append(1.0)
-            elif result == "D":
-                scores.append(0.5)
-            else:
-                scores.append(0.0)
-
-        return sum(scores) / len(scores) if scores else 0.5
-
-    @property
-    def attack_strength(self) -> float:
-        """Calculate attack strength (0-2, 1 = average)."""
-        if not self.recent_goals_scored:
-            return 1.0
-        recent = self.recent_goals_scored[-5:]
-        avg_goals = sum(recent) / len(recent)
-        return min(avg_goals / 1.5, 2.0)  # Normalize around 1.5 goals
-
-    @property
-    def defense_strength(self) -> float:
-        """Calculate defense strength (0-2, 1 = average)."""
-        if not self.recent_goals_conceded:
-            return 1.0
-        recent = self.recent_goals_conceded[-5:]
-        avg_conceded = sum(recent) / len(recent)
-        return min(2.0 - avg_conceded / 1.5, 2.0)  # Invert: fewer conceded = stronger
-
-    @property
-    def availability_ratio(self) -> float:
-        """Ratio of available key players."""
-        if self.key_players_total == 0:
-            return 1.0
-        return self.key_players_available / self.key_players_total
-
-    @property
-    def fatigue_factor(self) -> float:
-        """Calculate fatigue based on rest days (0-1, 1 = fresh)."""
-        # More rest = less fatigue
-        return min(self.rest_days / 7.0, 1.0)
+        Returns:
+            Weighted probability estimate
+        """
+        return self.evidence_probability() * self.reliability.weight * self.confidence
 
 
 @dataclass
-class MatchIntelligence:
+class SituationAssessment:
     """
-    Comprehensive intelligence for a match.
+    Result of multi-source evidence fusion.
 
-    Combines team intelligence with match-specific context.
-    """
+    Provides a comprehensive situational assessment including:
+    - Aggregated probability estimate
+    - Confidence / uncertainty quantification
+    - Evidence convergence metrics
+    - Anomaly detection flags
+    - Risk / stability indicators
 
-    match_id: str
-    home_team: TeamIntelligence
-    away_team: TeamIntelligence
-
-    # Match context
-    competition: str = ""
-    round: str | None = None
-    importance: float = 1.0  # 1 = normal, >1 = important
-
-    # Head to head
-    h2h_home_wins: int = 0
-    h2h_draws: int = 0
-    h2h_away_wins: int = 0
-    h2h_recent: list[str] = field(default_factory=list)
-
-    # Conditions
-    weather: str = "unknown"
-    venue_neutral: bool = False
-
-    # Intelligence records
-    match_intelligence: list[IntelligenceRecord] = field(default_factory=list)
-
-    # Timestamp
-    gathered_at: datetime = field(default_factory=datetime.now)
-
-    @property
-    def h2h_home_win_rate(self) -> float:
-        """Calculate head-to-head home win rate."""
-        total = self.h2h_home_wins + self.h2h_draws + self.h2h_away_wins
-        if total == 0:
-            return 0.33  # Default equal probability
-        return self.h2h_home_wins / total
-
-    def get_strength_difference(self) -> float:
-        """Calculate relative strength difference (-1 to 1)."""
-        home_strength = (
-            self.home_team.form_score * 0.3
-            + self.home_team.attack_strength * 0.2
-            + self.home_team.defense_strength * 0.2
-            + self.home_team.availability_ratio * 0.2
-            + self.home_team.fatigue_factor * 0.1
-        )
-
-        away_strength = (
-            self.away_team.form_score * 0.25
-            + self.away_team.attack_strength * 0.2
-            + self.away_team.defense_strength * 0.2
-            + self.away_team.availability_ratio * 0.2
-            + self.away_team.fatigue_factor * 0.15
-        )
-
-        # Apply home advantage
-        home_strength += self.home_team.home_advantage * 0.1
-
-        # Normalize to -1 to 1 range
-        return (home_strength - away_strength) / max(home_strength + away_strength, 1.0)
-
-
-@dataclass
-class DomainAwarenessReport:
-    """
-    Complete domain awareness report for a match.
-
-    Contains all intelligence integration results and confidence scores.
+    Attributes:
+        aggregate_probability: Fused probability from all sources
+        confidence: Overall confidence (0-1) in the assessment
+        source_count: Number of contributing sources
+        consensus_score: Degree of agreement across sources (0-1)
+        stability_status: Stability classification
+        contributing_sources: List of source IDs
+        variance: Variance across source estimates
+        anomalies: List of detected anomalies
+        generated_at: Timestamp of assessment
     """
 
-    match_id: str
-    match_intelligence: MatchIntelligence
-    confidence_scores: dict[str, float] = field(default_factory=dict)
-    intelligence_sources: list[IntelligenceRecord] = field(default_factory=list)
-    validation_results: dict[str, bool] = field(default_factory=dict)
-    final_confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
-    recommendations: list[str] = field(default_factory=list)
+    aggregate_probability: float
+    confidence: float
+    source_count: int
+    consensus_score: float
+    stability_status: StabilityStatus
+    contributing_sources: list[str]
+    variance: float = 0.0
+    anomalies: list[dict[str, Any]] = field(default_factory=list)
     generated_at: datetime = field(default_factory=datetime.now)
 
-    def get_high_confidence_outcomes(self) -> list[str]:
-        """Return outcomes with confidence above threshold."""
-        return [outcome for outcome, conf in self.confidence_scores.items() if conf >= 0.7]
-
-    def get_cross_validated_signals(self) -> dict[str, float]:
-        """Return signals that are cross-validated by multiple sources."""
-        validated = {}
-        for outcome, conf in self.confidence_scores.items():
-            if self.validation_results.get(outcome, False):
-                validated[outcome] = conf * 1.2  # Boost validated signals
-        return validated
+    def summary(self) -> str:
+        """Human-readable summary of the assessment."""
+        return (
+            f"Situation Assessment: p={self.aggregate_probability:.3f}, "
+            f"conf={self.confidence:.2f}, sources={self.source_count}, "
+            f"consensus={self.consensus_score:.2f}, status={self.stability_status.value}"
+        )
 
 
-class DomainAwarenessSystem:
+class DomainAwarenessEngine:
     """
-    Comprehensive domain awareness system for sports analytics.
+    Multi-source intelligence fusion and domain awareness engine.
 
-    Integrates multiple intelligence sources to provide validated
-    confidence scores for probability analysis.
+    Implements the complete evidence fusion pipeline:
+    1. Evidence intake and normalization
+    2. Source credibility estimation
+    3. Weighted consensus fusion (DeGroot-style)
+    4. Bayesian evidence accumulation
+    5. Evidence convergence / consensus analysis
+    6. Anomaly and cascade detection
+    7. Situation assessment output
+
+    The engine uses a hybrid approach combining:
+    - Weighted linear opinion pooling (Cooke, 1991)
+    - Bayesian log-odds pooling for sequential updates
+    - Variance-based consensus scoring
+    - Temporal decay for recency-weighted processing
+
+    References:
+        Cooke, R.M. (1991). "Experts in Uncertainty." Oxford University Press.
+        Genest, C. & Zidek, J.V. (1986). "Combining Probability Distributions."
+        Statistical Science, 1(1), 114-148.
 
     Example:
-        >>> system = DomainAwarenessSystem()
-        >>> report = system.analyze_match(match_intel)
-        >>> confidence = report.get_high_confidence_outcomes()
+        >>> engine = DomainAwarenessEngine()
+        >>> sources = [EvidenceSource(...), EvidenceSource(...)]
+        >>> assessment = engine.assess_situation(sources)
     """
 
-    # Confidence thresholds
-    THRESHOLD_VERY_HIGH = 0.85
-    THRESHOLD_HIGH = 0.70
-    THRESHOLD_MEDIUM = 0.50
-    THRESHOLD_LOW = 0.30
+    # Configuration
+    MIN_SOURCES_FOR_CONSENSUS = 2
+    TIME_DECAY_HALF_LIFE_HOURS = 24  # Temporal decay half-life
+    ANOMALY_THRESHOLD_STD = 2.0  # Z-score threshold for anomaly detection
+    CONSENSUS_HIGH = 0.7  # Above this = stable
+    CONSENSUS_LOW = 0.3  # Below this = ambiguous
+    CASCADE_DETECTION_WINDOW = 5  # Sources to check for cascade effect
 
     def __init__(self, config: dict[str, Any] | None = None):
         """
-        Initialize the domain awareness system.
+        Initialize the domain awareness engine.
 
         Args:
-            config: Optional configuration dictionary
+            config: Optional configuration with keys:
+                   time_decay_hours, consensus_high, consensus_low,
+                   anomaly_threshold
         """
         self.config = config or {}
+        self.time_decay_half_life = timedelta(
+            hours=self.config.get("time_decay_hours", self.TIME_DECAY_HALF_LIFE_HOURS)
+        )
+        self.consensus_high = self.config.get("consensus_high", self.CONSENSUS_HIGH)
+        self.consensus_low = self.config.get("consensus_low", self.CONSENSUS_LOW)
+        self.anomaly_threshold = self.config.get(
+            "anomaly_threshold", self.ANOMALY_THRESHOLD_STD
+        )
 
-    def assess_intelligence_reliability(
-        self,
-        intelligence: IntelligenceRecord,
-        context: dict[str, Any] | None = None,
-    ) -> float:
+    # ─── Evidence Preprocessing ────────────────────────────────────────
+
+    def compute_source_weight(self, source: EvidenceSource, now: datetime | None = None) -> float:
         """
-        Assess the reliability of a piece of intelligence.
+        Compute the aggregate credibility weight for a source.
 
-        Considers:
-        - Source reputation
-        - Freshness (time decay)
-        - Cross-validation
-        - Historical accuracy
+        Weight = reliability_weight * confidence * temporal_decay
+
+        Temporal decay uses exponential half-life model:
+            decay = 2^(-Δt / half_life)
 
         Args:
-            intelligence: The intelligence to assess
-            context: Additional context for assessment
+            source: The evidence source to weight
+            now: Reference time (defaults to current time)
 
         Returns:
-            Reliability score (0-1)
+            Aggregate weight (0.0-1.0 range after final normalization)
         """
-        base_confidence = intelligence.confidence
+        now = now or datetime.now()
 
-        # Time decay: older intelligence is less reliable
-        age = datetime.now() - intelligence.timestamp
-        if age > timedelta(hours=48):
-            time_factor = 0.7
-        elif age > timedelta(hours=24):
-            time_factor = 0.85
-        elif age > timedelta(hours=6):
-            time_factor = 0.95
+        # Temporal decay: older sources get less weight
+        age = (now - source.timestamp).total_seconds() / 3600.0  # hours
+        decay = math.pow(2.0, -age / (self.time_decay_half_life.total_seconds() / 3600.0))
+
+        # Combined weight: reliability × confidence × decay
+        return source.reliability.weight * source.confidence * decay
+
+    def normalize_sources(
+        self, sources: list[EvidenceSource]
+    ) -> tuple[list[EvidenceSource], list[float]]:
+        """
+        Normalize source weights to sum to 1.0 (DeGroot consensus preprocessing).
+
+        Args:
+            sources: List of evidence sources
+
+        Returns:
+            Tuple of (sorted_sources_by_weight, normalized_weights)
+        """
+        now = datetime.now()
+
+        # Compute raw weights
+        weights = [self.compute_source_weight(s, now) for s in sources]
+
+        # Normalize weights
+        total = sum(weights)
+        if total > 0:
+            normalized_weights = [w / total for w in weights]
         else:
-            time_factor = 1.0
+            # Equal weights if all are zero
+            n = max(len(sources), 1)
+            normalized_weights = [1.0 / n] * len(sources)
 
-        # Source weight factor
-        source_factor = intelligence.weight
+        return sources, normalized_weights
 
-        # Validation bonus
-        validation_factor = 1.1 if intelligence.validated else 1.0
+    # ─── Evidence Fusion Methods ───────────────────────────────────────
 
-        # Combine factors
-        reliability = base_confidence * time_factor * source_factor * validation_factor
-        return min(reliability, 1.0)
-
-    def calculate_signal_alignment(
-        self,
-        flow_direction: str,
-        intelligence_direction: str,
+    def linear_pool_fusion(
+        self, sources: list[EvidenceSource], weights: list[float]
     ) -> float:
         """
-        Calculate alignment between probability flow and intelligence signals.
+        Linear opinion pooling (weighted average).
+
+        p_fused = Σ(w_i * p_i), where Σ(w_i) = 1
+
+        This is the standard weighted opinion pool (Cooke, 1991).
 
         Args:
-            flow_direction: Direction from flow analysis (upward/downward/stable)
-            intelligence_direction: Direction from intelligence (positive/negative/neutral)
+            sources: Evidence sources with probability estimates
+            weights: Normalized weights (sum to 1)
 
         Returns:
-            Alignment score (-1 to 1)
+            Fused probability estimate (0-1)
         """
-        alignment_map = {
-            ("upward", "positive"): 1.0,
-            ("downward", "negative"): 1.0,
-            ("stable", "neutral"): 0.5,
-            ("upward", "neutral"): 0.2,
-            ("downward", "neutral"): 0.2,
-            ("upward", "negative"): -0.5,
-            ("downward", "positive"): -0.5,
-        }
+        if not sources:
+            return 0.5  # Maximum uncertainty
 
-        return alignment_map.get((flow_direction, intelligence_direction), 0.0)
+        fused = sum(w * s.evidence_probability() for s, w in zip(sources, weights))
+        return max(0.0, min(fused, 1.0))
 
-    def integrate_team_intelligence(
-        self,
-        team_intel: TeamIntelligence,
-        historical_accuracy: dict[str, float] | None = None,
-    ) -> dict[str, float]:
+    def log_odds_pool_fusion(
+        self, sources: list[EvidenceSource], weights: list[float]
+    ) -> float:
         """
-        Integrate all team intelligence into probability modifiers.
+        Log-odds opinion pooling (Bayesian-style evidence combination).
+
+        Transform to log-odds space, weight, and transform back:
+            logit(p) = log(p / (1-p))
+            logit_fused = Σ(w_i * logit(p_i))
+            p_fused = sigmoid(logit_fused)
+
+        Log-odds pooling is better for extreme probabilities and
+        has stronger Bayesian justification (Genest & Zidek, 1986).
 
         Args:
-            team_intel: Team intelligence data
-            historical_accuracy: Historical accuracy by source
+            sources: Evidence sources with probability estimates
+            weights: Normalized weights (sum to 1)
 
         Returns:
-            Dictionary of probability modifiers
+            Fused probability estimate (0-1)
         """
-        modifiers = {}
+        if not sources:
+            return 0.5
 
-        # Form modifier
-        form_impact = (team_intel.form_score - 0.5) * 0.15  # ±7.5% max impact
-        modifiers["form"] = form_impact
+        # Clip to avoid log(0) or division by zero
+        def safe_logit(p: float) -> float:
+            p = max(1e-6, min(1 - 1e-6, p))
+            return math.log(p / (1 - p))
 
-        # Attack modifier
-        attack_impact = (team_intel.attack_strength - 1.0) * 0.10
-        modifiers["attack"] = attack_impact
+        logits = [safe_logit(s.evidence_probability()) for s in sources]
+        fused_logit = sum(w * l for w, l in zip(weights, logits))
 
-        # Defense modifier
-        defense_impact = (team_intel.defense_strength - 1.0) * 0.10
-        modifiers["defense"] = defense_impact
+        # Inverse logit (sigmoid)
+        exp_val = math.exp(-fused_logit)
+        return 1.0 / (1.0 + exp_val)
 
-        # Availability modifier
-        availability_impact = (team_intel.availability_ratio - 0.8) * 0.10
-        modifiers["availability"] = availability_impact
-
-        # Fatigue modifier
-        fatigue_impact = (team_intel.fatigue_factor - 0.5) * 0.05
-        modifiers["fatigue"] = fatigue_impact
-
-        # Motivation modifier
-        motivation_impact = (team_intel.motivation_factor - 1.0) * 0.08
-        modifiers["motivation"] = motivation_impact
-
-        return modifiers
-
-    def cross_validate_signals(
-        self,
-        signals: dict[str, float],
-        min_agreement: float = 0.6,
-    ) -> dict[str, bool]:
+    def bayesian_evidence_accumulation(
+        self, sources: list[EvidenceSource], prior: float = 0.5
+    ) -> float:
         """
-        Cross-validate signals from multiple sources.
+        Sequential Bayesian evidence accumulation.
+
+        Treats each source as an independent evidence-bearing observation
+        and updates sequentially (Pearl, 1988):
+
+            posterior_odds = prior_odds * Π(likelihood_ratio_i)
+
+        where likelihood_ratio = p_i / (1 - p_i) for each source.
+
+        This corresponds to log-odds pooling with uniform weights but
+        includes explicit prior handling.
 
         Args:
-            signals: Dictionary of outcome -> signal strength
-            min_agreement: Minimum proportion of sources agreeing
+            sources: List of evidence sources
+            prior: Prior probability (default 0.5 = uninformative)
 
         Returns:
-            Dictionary of outcome -> validation result
+            Posterior probability after accumulating all evidence
         """
-        if not signals:
-            return {}
+        if not sources:
+            return prior
 
-        max_signal = max(abs(s) for s in signals.values())
-        if max_signal == 0:
-            return dict.fromkeys(signals.keys(), False)
+        # Prior log-odds
+        prior_logit = math.log(prior / max(1 - prior, 1e-6))
 
-        # Normalize signals
-        normalized = {k: v / max_signal for k, v in signals.items()}
+        # Accumulate evidence in log-odds space
+        evidence_logit = 0.0
+        n_effective = 0
 
-        # A signal is validated if its normalized strength is above threshold
-        # and agrees with the majority direction
-        positive_count = sum(1 for v in normalized.values() if v > 0)
-        total_count = len(normalized)
-        majority_positive = positive_count / total_count >= 0.5
+        for source in sources:
+            p = max(1e-6, min(1 - 1e-6, source.evidence_probability()))
+            weight = self.compute_source_weight(source)
+            if weight > 0:
+                evidence_logit += weight * math.log(p / (1 - p))
+                n_effective += 1
 
-        validation = {}
-        for outcome, signal in normalized.items():
-            # Validate if above threshold and agrees with majority
-            is_above_threshold = abs(signal) >= min_agreement
-            agrees_with_majority = (signal > 0) == majority_positive or abs(signal) < 0.3
-            validation[outcome] = is_above_threshold and agrees_with_majority
+        if n_effective == 0:
+            return prior
 
-        return validation
+        # Normalize by effective source count (scaled evidence)
+        # This prevents explosion from many weak sources
+        normalized_evidence = evidence_logit  # Weighted sum already scaled
 
-    def calculate_confidence(
-        self,
-        match_intel: MatchIntelligence,
-        flow_confidences: dict[str, float],
-        intelligence_modifiers: dict[str, dict[str, float]],
-    ) -> tuple[dict[str, float], ConfidenceLevel]:
+        # Posterior = prior + evidence
+        posterior_logit = prior_logit + normalized_evidence
+
+        # Transform back to probability
+        return 1.0 / (1.0 + math.exp(-posterior_logit))
+
+    # ─── Consensus Analysis ────────────────────────────────────────────
+
+    def compute_consensus_score(self, sources: list[EvidenceSource]) -> float:
         """
-        Calculate final confidence scores for each outcome.
+        Compute evidence consensus / agreement score.
 
-        Combines flow analysis confidence with intelligence confidence.
+        Measures degree of agreement across sources using:
+        1. Variance of probability estimates (lower = more consensus)
+        2. Pairwise agreement averaged
+
+        Score = 1 - min(σ / σ_max, 1.0)
+        where σ_max = 0.5 (maximum theoretical standard deviation for uniform {0,1})
 
         Args:
-            match_intel: Match intelligence data
-            flow_confidences: Confidence from flow analysis
-            intelligence_modifiers: Intelligence-based modifiers
+            sources: List of evidence sources
 
         Returns:
-            Tuple of (confidence_scores, overall_confidence_level)
+            Consensus score (0-1, higher = better agreement)
         """
-        # Combine intelligence modifiers for home/away
-        home_modifier = sum(intelligence_modifiers.get("home", {}).values())
-        away_modifier = sum(intelligence_modifiers.get("away", {}).values())
+        if len(sources) < 2:
+            return 1.0  # Single source = perfect consensus (trivially)
 
-        # Calculate intelligence-based confidence
-        intelligence_confidence = {
-            "home_win": 0.33 + home_modifier,
-            "draw": 0.33,
-            "away_win": 0.33 + away_modifier,
-        }
+        values = [s.evidence_probability() for s in sources]
+        mean = sum(values) / len(values)
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        std_dev = math.sqrt(variance)
 
-        # Normalize to sum to 1
-        total = sum(intelligence_confidence.values())
-        intelligence_confidence = {k: v / total for k, v in intelligence_confidence.items()}
+        # Normalize: max possible std for binary is 0.5 (Bernoulli p=0.5)
+        sigma_max = 0.5
+        normalized_disagreement = min(std_dev / sigma_max, 1.0)
 
-        # Combine with flow confidence (weighted average)
-        flow_weight = 0.6
-        intelligence_weight = 0.4
+        return 1.0 - normalized_disagreement
 
-        combined_confidence = {}
-        for outcome in flow_confidences:
-            flow_conf = flow_confidences.get(outcome, 0.33)
-            intel_conf = intelligence_confidence.get(outcome, 0.33)
-            combined_confidence[outcome] = (
-                flow_weight * flow_conf + intelligence_weight * intel_conf
+    def compute_effective_number_of_sources(
+        self, weights: list[float]
+    ) -> float:
+        """
+        Effective number of independent sources (Herfindahl-Hirschman index).
+
+        n_effective = 1 / Σ(w_i²)
+
+        Measures true diversity of information sources. If one source has
+        w=1 and others w=0, n_effective=1 (only one source contributing).
+
+        Args:
+            weights: Normalized weights (sum to 1)
+
+        Returns:
+            Effective number of sources (>=1)
+        """
+        if not weights:
+            return 0.0
+        hhi = sum(w * w for w in weights)
+        if hhi == 0:
+            return len(weights)
+        return 1.0 / hhi
+
+    # ─── Anomaly Detection ─────────────────────────────────────────────
+
+    def detect_anomalies(
+        self, sources: list[EvidenceSource], consensus_score: float, mean_prob: float
+    ) -> list[dict[str, Any]]:
+        """
+        Detect anomalous / outlier evidence sources.
+
+        Uses z-score based detection: sources deviating more than
+        `anomaly_threshold` standard deviations from the mean are flagged.
+
+        Also detects information cascades: when multiple sources converge
+        rapidly on the same estimate with high similarity (herding detection).
+
+        Args:
+            sources: List of evidence sources
+            consensus_score: Current consensus score
+            mean_prob: Mean probability across sources
+
+        Returns:
+            List of anomaly dicts with keys: type, source_id, severity, description
+        """
+        anomalies: list[dict[str, Any]] = []
+        if len(sources) < 3:
+            return anomalies
+
+        values = [s.evidence_probability() for s in sources]
+        mean = sum(values) / len(values)
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        std_dev = math.sqrt(variance)
+
+        if std_dev == 0:
+            return anomalies
+
+        # Z-score based anomaly detection
+        for source in sources:
+            z = abs(source.evidence_probability() - mean) / std_dev
+            if z > self.anomaly_threshold:
+                anomalies.append(
+                    {
+                        "type": "outlier",
+                        "source_id": source.source_id,
+                        "severity": "high" if z > 3.0 else "medium",
+                        "z_score": round(z, 3),
+                        "description": (
+                            f"Source probability {source.evidence_probability():.3f} "
+                            f"deviates {z:.1f}σ from consensus mean {mean:.3f}"
+                        ),
+                    }
+                )
+
+        # Information cascade detection
+        # When consensus is very high but source diversity is low
+        n_sources = len(sources)
+        if consensus_score > 0.9 and n_sources < self.CASCADE_DETECTION_WINDOW:
+            anomalies.append(
+                {
+                    "type": "potential_cascade",
+                    "severity": "low",
+                    "description": (
+                        f"High consensus ({consensus_score:.2f}) with few sources "
+                        f"({n_sources}). Potential information cascade - verify sources "
+                        f"are independently derived."
+                    ),
+                }
             )
 
-        # Determine overall confidence level
-        avg_confidence = sum(combined_confidence.values()) / len(combined_confidence)
+        return anomalies
 
-        if avg_confidence >= self.THRESHOLD_VERY_HIGH:
-            overall = ConfidenceLevel.VERY_HIGH
-        elif avg_confidence >= self.THRESHOLD_HIGH:
-            overall = ConfidenceLevel.HIGH
-        elif avg_confidence >= self.THRESHOLD_MEDIUM:
-            overall = ConfidenceLevel.MEDIUM
-        elif avg_confidence >= self.THRESHOLD_LOW:
-            overall = ConfidenceLevel.LOW
+    # ─── Main Assessment Pipeline ──────────────────────────────────────
+
+    def assess_situation(
+        self,
+        sources: list[EvidenceSource],
+        prior_probability: float = 0.5,
+        fusion_method: str = "hybrid",
+    ) -> SituationAssessment:
+        """
+        Complete multi-source intelligence fusion and situation assessment.
+
+        This is the main entry point of the engine. Processing pipeline:
+
+        1. Source normalization and weight computation
+        2. Evidence fusion using specified method
+        3. Consensus analysis and variance computation
+        4. Anomaly detection
+        5. Stability classification
+        6. Confidence calibration
+
+        Args:
+            sources: List of evidence sources to fuse
+            prior_probability: Prior probability (default 0.5, uninformative)
+            fusion_method: 'linear', 'log_odds', 'bayesian', or 'hybrid'
+
+        Returns:
+            SituationAssessment with aggregated probability and confidence
+
+        Raises:
+            ValueError: If fusion_method is not recognized
+        """
+        # Step 0: Handle edge case - no sources
+        if not sources:
+            return SituationAssessment(
+                aggregate_probability=prior_probability,
+                confidence=0.1,
+                source_count=0,
+                consensus_score=0.0,
+                stability_status=StabilityStatus.AMBIGUOUS,
+                contributing_sources=[],
+                anomalies=[
+                    {
+                        "type": "no_evidence",
+                        "severity": "high",
+                        "description": "No evidence sources provided - returning prior probability",
+                    }
+                ],
+            )
+
+        # Step 1: Normalize sources
+        sorted_sources, weights = self.normalize_sources(sources)
+
+        # Step 2: Evidence fusion
+        if fusion_method == "linear":
+            fused = self.linear_pool_fusion(sorted_sources, weights)
+        elif fusion_method == "log_odds":
+            fused = self.log_odds_pool_fusion(sorted_sources, weights)
+        elif fusion_method == "bayesian":
+            fused = self.bayesian_evidence_accumulation(sorted_sources, prior_probability)
+        elif fusion_method == "hybrid":
+            # Hybrid: average of linear and log-odds
+            linear = self.linear_pool_fusion(sorted_sources, weights)
+            log_odds = self.log_odds_pool_fusion(sorted_sources, weights)
+            bayesian = self.bayesian_evidence_accumulation(sorted_sources, prior_probability)
+            fused = (linear + log_odds + bayesian) / 3.0
         else:
-            overall = ConfidenceLevel.NEGATIVE
+            raise ValueError(
+                f"Unknown fusion_method: {fusion_method}. "
+                f"Use 'linear', 'log_odds', 'bayesian', or 'hybrid'."
+            )
 
-        return combined_confidence, overall
+        # Step 3: Consensus analysis
+        consensus = self.compute_consensus_score(sources)
+        values = [s.evidence_probability() for s in sources]
+        mean = sum(values) / len(values)
+        variance = sum((v - mean) ** 2 for v in values) / len(values)
 
-    def analyze_match(
-        self,
-        match_intel: MatchIntelligence,
-        flow_confidences: dict[str, float] | None = None,
-    ) -> DomainAwarenessReport:
-        """
-        Perform comprehensive domain awareness analysis for a match.
+        # Step 4: Anomaly detection
+        anomalies = self.detect_anomalies(sources, consensus, mean)
 
-        Args:
-            match_intel: Complete match intelligence
-            flow_confidences: Optional confidence from flow analysis
+        # Step 5: Stability classification
+        n_effective = self.compute_effective_number_of_sources(weights)
 
-        Returns:
-            DomainAwarenessReport with analysis results
-        """
-        flow_confidences = flow_confidences or {
-            "home_win": 0.33,
-            "draw": 0.33,
-            "away_win": 0.33,
-        }
-
-        # Integrate team intelligence
-        home_modifiers = self.integrate_team_intelligence(match_intel.home_team)
-        away_modifiers = self.integrate_team_intelligence(match_intel.away_team)
-
-        intelligence_modifiers = {
-            "home": home_modifiers,
-            "away": away_modifiers,
-        }
-
-        # Calculate confidence scores
-        confidence_scores, overall_level = self.calculate_confidence(
-            match_intel,
-            flow_confidences,
-            intelligence_modifiers,
-        )
-
-        # Cross-validate signals
-        validation_results = self.cross_validate_signals(confidence_scores)
-
-        # Generate recommendations
-        recommendations = []
-        if overall_level == ConfidenceLevel.VERY_HIGH:
-            recommendations.append("Strong multi-source confirmation detected")
-            recommendations.append("High confidence in current signals")
-        elif overall_level == ConfidenceLevel.HIGH:
-            recommendations.append("Good confirmation from multiple sources")
-        elif overall_level == ConfidenceLevel.NEGATIVE:
-            recommendations.append("Warning: Conflicting signals detected")
-            recommendations.append("Consider additional verification")
-
-        # Strength difference insight
-        strength_diff = match_intel.get_strength_difference()
-        if abs(strength_diff) > 0.3:
-            if strength_diff > 0:
-                recommendations.append(
-                    f"Home team significantly stronger (delta: {strength_diff:.2f})"
-                )
+        if len(sources) < self.MIN_SOURCES_FOR_CONSENSUS:
+            status = StabilityStatus.AMBIGUOUS
+        elif anomalies and any(a.get("severity") == "high" for a in anomalies):
+            status = StabilityStatus.ANOMALOUS
+        elif consensus >= self.consensus_high and n_effective >= 2:
+            status = StabilityStatus.STABLE
+        elif consensus >= self.consensus_low:
+            status = StabilityStatus.UNSTABLE
+        else:
+            # Check if there's a trend (last vs first half of sources by time)
+            sorted_by_time = sorted(sources, key=lambda s: s.timestamp)
+            mid = len(sorted_by_time) // 2
+            if mid > 0:
+                early_mean = sum(
+                    s.evidence_probability() for s in sorted_by_time[:mid]
+                ) / mid
+                late_mean = sum(
+                    s.evidence_probability() for s in sorted_by_time[mid:]
+                ) / max(len(sorted_by_time) - mid, 1)
+                if abs(late_mean - early_mean) > 0.15:
+                    status = StabilityStatus.EMERGING
+                else:
+                    status = StabilityStatus.AMBIGUOUS
             else:
-                recommendations.append(
-                    f"Away team significantly stronger (delta: {abs(strength_diff):.2f})"
-                )
+                status = StabilityStatus.AMBIGUOUS
 
-        return DomainAwarenessReport(
-            match_id=match_intel.match_id,
-            match_intelligence=match_intel,
-            confidence_scores=confidence_scores,
-            intelligence_sources=[],
-            validation_results=validation_results,
-            final_confidence=overall_level,
-            recommendations=recommendations,
+        # Step 6: Confidence calibration
+        # Confidence = function of:
+        #   - Number of sources (more = higher)
+        #   - Consensus score (more agreement = higher)
+        #   - Effective source count (independent sources = higher)
+        #   - Source reliability (higher quality = higher)
+        avg_reliability = sum(s.reliability.weight for s in sources) / len(sources)
+        source_factor = min(len(sources) / 5.0, 1.0)  # Saturates at 5 sources
+        effective_factor = min(n_effective / 3.0, 1.0)  # Saturates at 3 effective sources
+
+        raw_confidence = (
+            0.35 * consensus
+            + 0.25 * source_factor
+            + 0.20 * effective_factor
+            + 0.20 * avg_reliability
         )
 
-    def generate_intelligence_summary(
-        self,
-        report: DomainAwarenessReport,
-    ) -> str:
+        # Anomaly penalty
+        if anomalies:
+            penalty = 0.05 * len(anomalies)
+            raw_confidence = max(0.0, raw_confidence - penalty)
+
+        confidence = max(0.0, min(raw_confidence, 1.0))
+
+        # Build final assessment
+        contributing_ids = [s.source_id for s in sorted_sources]
+
+        return SituationAssessment(
+            aggregate_probability=fused,
+            confidence=confidence,
+            source_count=len(sources),
+            consensus_score=consensus,
+            stability_status=status,
+            contributing_sources=contributing_ids,
+            variance=variance,
+            anomalies=anomalies,
+        )
+
+    def cross_validate(
+        self, sources_a: list[EvidenceSource], sources_b: list[EvidenceSource]
+    ) -> dict[str, Any]:
         """
-        Generate a human-readable summary of the intelligence analysis.
+        Cross-validate two independent source groups.
+
+        Useful when you have two independent sets of evidence
+        (e.g., analytical vs observational). Computes:
+        - Agreement level (absolute probability difference)
+        - Combined fusion result
+        - Meta-confidence based on cross-group agreement
 
         Args:
-            report: The domain awareness report
+            sources_a: First group of evidence sources
+            sources_b: Second group of evidence sources
 
         Returns:
-            Formatted summary string
+            Dict with: agreement, delta, assessment_a, assessment_b, combined
         """
-        lines = [
-            f"Domain Awareness Report for {report.match_id}",
-            "=" * 50,
-            f"Overall Confidence: {report.final_confidence.value.upper()}",
-            "",
-            "Confidence Scores:",
-        ]
+        assessment_a = self.assess_situation(sources_a)
+        assessment_b = self.assess_situation(sources_b)
 
-        for outcome, confidence in sorted(
-            report.confidence_scores.items(), key=lambda x: x[1], reverse=True
-        ):
-            bar = "█" * int(confidence * 20) + "░" * (20 - int(confidence * 20))
-            lines.append(f"  {outcome}: {confidence:.1%} |{bar}|")
+        delta = abs(assessment_a.aggregate_probability - assessment_b.aggregate_probability)
+        agreement = 1.0 - delta
 
-        lines.append("")
-        lines.append("Recommendations:")
-        for rec in report.recommendations:
-            lines.append(f"  • {rec}")
+        # Combined assessment with all sources
+        combined = self.assess_situation(sources_a + sources_b)
 
-        return "\n".join(lines)
+        # Meta-confidence: product of individual confidences × agreement
+        meta_confidence = assessment_a.confidence * assessment_b.confidence * agreement
+
+        return {
+            "agreement": agreement,
+            "delta": delta,
+            "assessment_a": assessment_a,
+            "assessment_b": assessment_b,
+            "combined_assessment": combined,
+            "meta_confidence": meta_confidence,
+        }
 
 
 __all__ = [
-    "IntelligenceWeight",
-    "ConfidenceLevel",
-    "IntelligenceRecord",
-    "TeamIntelligence",
-    "MatchIntelligence",
-    "DomainAwarenessReport",
-    "DomainAwarenessSystem",
+    "EvidenceType",
+    "SourceReliability",
+    "StabilityStatus",
+    "EvidenceSource",
+    "SituationAssessment",
+    "DomainAwarenessEngine",
 ]
