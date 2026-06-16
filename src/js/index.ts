@@ -1,5 +1,5 @@
 /**
- * SPAF - Sports Probability Analysis Framework
+ * EDP - Expectation Domain Perception Method
  * Core probability engine implementation (TypeScript).
  *
  * This module implements the core probability analysis engine based on:
@@ -7,8 +7,8 @@
  * - Bayesian updating for probability flow analysis
  * - Kelly criterion variant for capital allocation
  *
- * @module spaf-framework
- * @version 4.0.0
+ * @module edp-framework
+ * @version 4.1.0
  * @license MIT
  *
  * DISCLAIMER: For ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.

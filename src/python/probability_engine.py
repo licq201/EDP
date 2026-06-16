@@ -1,5 +1,5 @@
 """
-SPAF - Sports Analytics Framework
+EDP - Expectation Domain Perception Method
 Advanced Probability Analysis Engine with Bayesian Inference
 
 This module implements the core probability analysis engine featuring:

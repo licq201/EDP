@@ -1,8 +1,8 @@
-# 🎯 SPAF - Sports Analytics Framework
+# 🎯 EDP - 期望域感知法
 
-> **全域感知型体育竞彩分析框架**
+> **Expectation Domain Perception Method**
 >
-> **Domain-Aware, Situational-Awareness-Driven, Probability-Flow-Based Sports Analytics Optimization System**
+> **全域感知型概率分析框架 - Domain-Aware Probability Analysis Framework**
 
 ![Version](https://img.shields.io/badge/Version-4.1-blue)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-green)

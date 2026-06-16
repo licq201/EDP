@@ -1,7 +1,7 @@
 {
-  "name": "spaf-framework",
-  "version": "4.0.0",
-  "description": "Sports Probability Analysis Framework - Domain-Aware, Situational-Awareness-Driven, Probability-Flow-Based Optimization System",
+  "name": "edp-framework",
+  "version": "4.1.0",
+  "description": "EDP - Expectation Domain Perception Method - 期望域感知法 - Domain-Aware Probability Analysis Framework",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

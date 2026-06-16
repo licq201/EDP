@@ -147,12 +147,12 @@ DOI: [10.3386/w15923](https://doi.org/10.3386/w15923)
 If you use this framework in academic work, please cite:
 
 ```bibtex
-@software{spaf2026,
-  author = {SPAF Team},
-  title = {SPAF: Sports Probability Analysis Framework},
+@software{edp2026,
+  author = {EDP Team},
+  title = {EDP: Expectation Domain Perception Method},
   year = {2026},
   version = {4.1.0},
-  url = {https://github.com/your-org/spaf-framework}
+  url = {https://github.com/ai-nurmamat/EDP}
 }
 ```
 
