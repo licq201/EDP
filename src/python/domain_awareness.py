@@ -490,6 +490,51 @@ class DomainAwarenessEngine:
             "group_b_probability": assess_b.aggregate_probability,
         }
 
+    # ------------------------------------------------------------------
+    # 模型多样性 / 冗余分析（DTVW 思想，arXiv 2508.07136, 2025）
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def model_diversity(sources: list[EvidenceSource]) -> dict[str, float]:
+        """
+        计算来源间的多样性（非冗余信息量）。
+
+        理论依据：DTVW（Luo, Kang & Luo, 2025）——多样性量化预测差异，
+        捕获非冗余信息以补充精度。冗余来源应被降权。
+
+        度量：
+            - mean_pairwise_distance: 源间概率的平均绝对差（越大越多样）
+            - redundancy: 1 − diversity，冗余度（越大越冗余）
+            - effective_sources: 多样性调整后的"有效来源数"
+        """
+        if len(sources) < 2:
+            return {
+                "mean_pairwise_distance": 0.0,
+                "redundancy": 0.0,
+                "diversity": 1.0 if sources else 0.0,
+                "effective_sources": float(len(sources)),
+            }
+        probs = [s.probability for s in sources]
+        n = len(probs)
+        total_dist = 0.0
+        pairs = 0
+        for i in range(n):
+            for j in range(i + 1, n):
+                total_dist += abs(probs[i] - probs[j])
+                pairs += 1
+        mean_dist = total_dist / max(pairs, 1)
+        # diversity ∈ [0,1]，平均距离归一化（0.5 为最大可能距离）
+        diversity = min(mean_dist / 0.5, 1.0)
+        redundancy = 1.0 - diversity
+        # 有效来源数：多样性越高，有效来源越接近真实数量
+        effective = 1.0 + (n - 1) * diversity
+        return {
+            "mean_pairwise_distance": mean_dist,
+            "redundancy": redundancy,
+            "diversity": diversity,
+            "effective_sources": effective,
+        }
+
 
 __all__ = [
     "EvidenceType",

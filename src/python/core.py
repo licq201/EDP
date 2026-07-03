@@ -94,11 +94,17 @@ class Evidence:
     Evidence 是从某个信息来源提取的一条结构化证据，content 中至少
     应包含 "probability" / "direction" / "value" 之一。
 
+    定向证据（推荐）：通过 outcome_id 指明该证据支持的具体结果，
+    融合引擎将对该结果做定向 log-odds 更新，不影响其它结果。
+    若 outcome_id 为 None，则视为对该问题整体的"方向性"证据，
+    按其概率对所有结果做加权调整。
+
     Attributes:
         id: 证据唯一标识
         source_type: 来源类型
             market / model / expert / nlp / sensor / llm / api
         content: 证据内容字典
+        outcome_id: 该证据指向的结果 ID（None 表示非定向证据）
         confidence: 来源自报信心 [0,1]
         reliability: 来源可靠性 [0,1]
         timestamp: 证据时间戳
@@ -108,6 +114,7 @@ class Evidence:
     id: str
     source_type: str
     content: dict[str, Any]
+    outcome_id: str | None = None
     confidence: float = 0.7
     reliability: float = 0.8
     timestamp: datetime = field(default_factory=datetime.now)
@@ -115,6 +122,7 @@ class Evidence:
 
     def extract_probability(self) -> float:
         """从 content 中提取概率估计 [0,1]。"""
+        # 若显式指定 outcome_id 与该 outcome 的概率，优先用 content["probability"]
         if "probability" in self.content:
             return max(0.0, min(1.0, float(self.content["probability"])))
         elif "value" in self.content:

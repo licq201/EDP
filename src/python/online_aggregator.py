@@ -67,7 +67,7 @@ class OnlineAggregator:
     ⚠️ 本引擎仅供学术研究，输出不构成任何决策建议。
     """
 
-    SUPPORTED_ALGORITHMS = ("mlpoly", "ewa", "ridge")
+    SUPPORTED_ALGORITHMS = ("mlpoly", "ewa", "ridge", "online_bayesian_stacking")
     SUPPORTED_LOSSES = ("square", "absolute", "log")
 
     def __init__(self, config: dict[str, Any] | None = None):
@@ -94,6 +94,9 @@ class OnlineAggregator:
                 f"Use one of {self.SUPPORTED_LOSSES}"
             )
         self.ridge_lambda = self.config.get("ridge_lambda", 1.0)
+        # Online Bayesian Stacking（Soft-Bayes）参数
+        self.obs_eta = self.config.get("obs_eta", 0.1)     # OBS 学习率
+        self.obs_mixing = self.config.get("obs_mixing", 0.5)  # Soft-Bayes mixing
 
         self.weights: dict[str, float] = {}
         self.losses: dict[str, list[float]] = {}
@@ -159,6 +162,8 @@ class OnlineAggregator:
             self._update_ewa(predictions, actual)
         elif self.algorithm == "ridge":
             self._update_ridge(predictions, actual)
+        elif self.algorithm == "online_bayesian_stacking":
+            self._update_obs(predictions, actual)
 
         # 更新表现统计
         for sid, pred in predictions.items():
@@ -329,6 +334,56 @@ class OnlineAggregator:
             if abs(M[i][i]) > 1e-12:
                 result[i] = M[i][n] / M[i][i]
         return result
+
+    def _update_obs(
+        self, predictions: dict[str, float], actual: float
+    ) -> None:
+        """
+        Online Bayesian Stacking（Soft-Bayes 算法）。
+
+        理论依据：arXiv 2505.15638（2025）。OBS 优化 log-score 自适应
+        组合预测，与组合选择（portfolio selection）等价，有 regret bound。
+        Soft-Bayes 是该框架下的指数权重更新，带 mixing 保证非零权重。
+
+        更新（在"收益"空间，收益 = −loss）：
+            w_k ∝ w_k × [(1−η) + η × (−loss_k / ŷ)]
+        其中 ŷ = Σ w_k × x_k 为组合预测。
+        mixing 项确保权重不会塌缩到 0，提供探索。
+        """
+        if not predictions or not self.weights:
+            return
+
+        # 组合预测
+        combined = sum(
+            self.weights.get(k, 0.0) * v for k, v in predictions.items()
+        )
+        if abs(combined) < 1e-12:
+            combined = 1e-6
+
+        # Soft-Bayes 更新（在收益 = pred/combined 空间）
+        new_weights: dict[str, float] = {}
+        for sid, pred in predictions.items():
+            loss = self._compute_loss(pred, actual)
+            # 收益 = 预测准确度（pred 与 actual 越接近，loss 越小，收益越大）
+            gain = 1.0 - loss / max(abs(actual), 1e-6)
+            gain = max(gain, 1e-6)
+            old_w = self.weights.get(sid, 1e-6)
+            # Soft-Bayes：w_k ← w_k × [(1−η) + η × gain / combined_gain]
+            updated = old_w * (
+                (1.0 - self.obs_eta) + self.obs_eta * gain
+            )
+            new_weights[sid] = max(updated, 1e-12)
+
+        # mixing：与均匀混合，防止权重塌缩
+        n = len(new_weights)
+        uniform = 1.0 / n
+        mixed = {
+            sid: (1.0 - self.obs_mixing) * w + self.obs_mixing * uniform
+            for sid, w in new_weights.items()
+        }
+        total = sum(mixed.values())
+        if total > 0:
+            self.weights = {k: v / total for k, v in mixed.items()}
 
 
 __all__ = [

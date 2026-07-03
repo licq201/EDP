@@ -40,6 +40,8 @@ from edp import (
     BayesianPrior,
     FlowDirection,
     RiskTier,
+    ConformalEngine,
+    ConformalConfig,
 )
 
 
@@ -321,17 +323,20 @@ def test_edp_analyze_two_outcomes():
     edp = EDP(domain)
     result = edp.analyze(
         evidence=[
-            Evidence("m1", "model", {"probability": 0.72}, confidence=0.8),
-            Evidence("s1", "sensor", {"probability": 0.68}, confidence=0.9),
-            Evidence("h1", "model", {"probability": 0.60}, confidence=0.5),
+            Evidence("m1", "model", {"probability": 0.72}, outcome_id="rain", confidence=0.8),
+            Evidence("s1", "sensor", {"probability": 0.68}, outcome_id="rain", confidence=0.9),
+            Evidence("h1", "model", {"probability": 0.60}, outcome_id="rain", confidence=0.5),
         ],
         budget=1000,
     )
     assert "probabilities" in result
     assert "summary" in result
     assert "warnings" in result
+    assert "prediction_set" in result  # L7 保形预测集
     assert len(result["warnings"]) > 0  # 应有风险警示
     assert abs(sum(result["probabilities"].values()) - 1.0) < 0.05
+    # P0 修复验证：定向证据指向 rain，rain 应明显 > 0.5
+    assert result["probabilities"]["rain"] > 0.55
 
 
 def test_edp_analyze_with_market_quotes():
@@ -358,6 +363,149 @@ def test_edp_warnings_contain_risk_disclaimer():
     result = edp.analyze(evidence=[Evidence("e1", "model", {"probability": 0.6})])
     warning_text = " ".join(result["warnings"])
     assert "不构成" in warning_text or "学术研究" in warning_text
+
+
+# ----------------------------------------------------------------------
+# P0 修复：定向证据 log-odds 更新
+# ----------------------------------------------------------------------
+
+def test_directed_evidence_updates_target_outcome():
+    """定向证据应只提升指向的结果，不影响其它结果相对比例。"""
+    domain = GenericDomain([Outcome("a", "A"), Outcome("b", "B"), Outcome("c", "C")])
+    edp = EDP(domain)
+    result = edp.analyze(
+        evidence=[
+            Evidence("e1", "model", {"probability": 0.9}, outcome_id="a", confidence=0.9),
+        ],
+    )
+    p = result["probabilities"]
+    assert p["a"] > 0.5  # a 被定向证据提升
+    assert p["a"] > p["b"]
+    assert p["a"] > p["c"]
+
+
+# ----------------------------------------------------------------------
+# L7: 保形预测（2025 前沿）
+# ----------------------------------------------------------------------
+
+def test_conformal_split_prediction_set():
+    """Split Conformal：校准后预测集应包含高概率结果。"""
+    engine = ConformalEngine(ConformalConfig(alpha=0.1, method="split"))
+    # 校准集：5 次预测，actual 都是 a，p(a)≈0.7
+    history = [({"a": 0.7, "b": 0.3}, "a") for _ in range(5)]
+    engine.calibrate(history)
+    pset = engine.predict({"a": 0.75, "b": 0.25})
+    assert "a" in pset.prediction_set  # 高概率结果应在集内
+    assert pset.coverage_target == 0.9
+
+
+def test_conformal_aci_online_coverage():
+    """ACI：在线更新后经验覆盖率不应低于目标（ACI 保证不欠覆盖）。"""
+    import random
+    random.seed(7)
+    engine = ConformalEngine(ConformalConfig(alpha=0.1, method="aci", aci_gamma=0.01))
+    # 稳定分布：a 以 0.7 概率发生
+    preds_template = {"a": 0.7, "b": 0.3}
+    for _ in range(200):
+        pset = engine.predict(preds_template)
+        actual = "a" if random.random() < 0.7 else "b"
+        engine.update(preds_template, actual)
+    stats = engine.coverage_stats()
+    # ACI 保证长程不欠覆盖；在常数预测退化场景下趋于保守（覆盖率偏高）
+    assert stats["empirical_coverage"] >= 0.85
+    assert stats["n_updates"] == 200
+    assert stats["calibration_size"] == 200
+
+
+def test_conformal_agaci_runs():
+    """AgACI：应正常运行并产出预测集。"""
+    engine = ConformalEngine(ConformalConfig(alpha=0.2, method="agaci"))
+    engine.calibrate([({"a": 0.6, "b": 0.4}, "a") for _ in range(10)])
+    pset = engine.predict({"a": 0.65, "b": 0.35})
+    assert pset.method == "agaci"
+    assert isinstance(pset.prediction_set, list)
+
+
+def test_conformal_update_returns_coverage():
+    engine = ConformalEngine(ConformalConfig(alpha=0.1, method="aci"))
+    engine.calibrate([({"a": 0.7, "b": 0.3}, "a") for _ in range(5)])
+    res = engine.update({"a": 0.7, "b": 0.3}, "a")
+    assert "covered" in res
+    assert "coverage_rate" in res
+    assert res["covered"] is True
+
+
+# ----------------------------------------------------------------------
+# Online Bayesian Stacking（Soft-Bayes）
+# ----------------------------------------------------------------------
+
+def test_online_bayesian_stacking_prefers_best_source():
+    agg = OnlineAggregator({"algorithm": "online_bayesian_stacking", "obs_eta": 0.3})
+    agg.initialize(["good", "bad"])
+    import random
+    random.seed(1)
+    for _ in range(30):
+        actual = 0.8
+        preds = {"good": 0.8, "bad": 0.2}  # good 总是准
+        agg.predict(preds)
+        agg.update(preds, actual)
+    weights = agg.get_weights()
+    assert weights["good"] > weights["bad"]
+
+
+# ----------------------------------------------------------------------
+# Hyvärinen score
+# ----------------------------------------------------------------------
+
+def test_hyvarinen_score_penalizes_wrong_prediction():
+    calib = CalibrationEngine()
+    # 预测 a 概率高，实际 a 发生 → 低分（好）
+    good = calib.hyvarinen_score({"a": 0.9, "b": 0.1}, "a")
+    # 预测 a 概率高，实际 b 发生 → 高分（差）
+    bad = calib.hyvarinen_score({"a": 0.9, "b": 0.1}, "b")
+    assert bad > good
+
+
+# ----------------------------------------------------------------------
+# 模型多样性（DTVW）
+# ----------------------------------------------------------------------
+
+def test_model_diversity():
+    from edp import EvidenceSource, EvidenceType, SourceReliability
+    from datetime import datetime
+    now = datetime.now()
+    # 高冗余：三个源概率几乎相同
+    redundant = [
+        EvidenceSource("s1", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.50}),
+        EvidenceSource("s2", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.51}),
+        EvidenceSource("s3", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.49}),
+    ]
+    # 高多样：三个源概率差异大
+    diverse = [
+        EvidenceSource("s1", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.20}),
+        EvidenceSource("s2", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.50}),
+        EvidenceSource("s3", EvidenceType.MODEL, SourceReliability.B, now, {"probability": 0.80}),
+    ]
+    r = DomainAwarenessEngine.model_diversity(redundant)
+    d = DomainAwarenessEngine.model_diversity(diverse)
+    assert d["diversity"] > r["diversity"]
+    assert r["redundancy"] > d["redundancy"]
+    assert d["effective_sources"] > r["effective_sources"]
+
+
+# ----------------------------------------------------------------------
+# EDP 顶层 L7 集成
+# ----------------------------------------------------------------------
+
+def test_edp_conformal_predict_returns_set():
+    domain = GenericDomain([Outcome("a", "A"), Outcome("b", "B")])
+    edp = EDP(domain, {"conformal": {"method": "aci", "alpha": 0.1}})
+    result = edp.analyze(
+        evidence=[Evidence("e1", "model", {"probability": 0.7}, outcome_id="a")],
+    )
+    pset = result["prediction_set"]
+    assert isinstance(pset.prediction_set, list)
+    assert pset.coverage_target == 0.9
 
 
 if __name__ == "__main__":

@@ -96,6 +96,12 @@ from .calibration import (
     CalibrationEngine,
     PredictionRecord,
 )
+from .conformal import (
+    CalibrationRecord as ConformalCalibrationRecord,
+    ConformalConfig,
+    ConformalEngine,
+    PredictionSet,
+)
 from .edp import EDP
 
 __version__ = "2.0.0"
@@ -146,4 +152,8 @@ __all__ = [
     # Layer 6: 校准
     "PredictionRecord",
     "CalibrationEngine",
+    # Layer 7: 保形预测（2025 前沿）
+    "ConformalConfig",
+    "ConformalEngine",
+    "PredictionSet",
 ]

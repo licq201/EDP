@@ -148,6 +148,41 @@ class CalibrationEngine:
         p = max(eps, min(1 - eps, predictions.get(actual_outcome, 0.0)))
         return -math.log(p)
 
+    @staticmethod
+    def hyvarinen_score(
+        predictions: dict[str, float], actual_outcome: str
+    ) -> float:
+        """
+        Hyvärinen score（离散多结果变体）。
+
+        与 Log Score 不同，Hyvärinen score 不依赖归一化常数，是 proper
+        scoring rule，可优化未归一化模型（如 BPS / log-pooling superposition）。
+        理论：Hyvärinen (2005); Ehm & Gneiting (2012)。
+
+        离散形式（针对多结果概率向量）：
+            S = 2/|∇p_actual| − ||∇log p||² 的离散近似
+        这里采用实用的离散版本：基于 log p 的有限差分。
+
+        Returns: 越小越好（与 log score 量纲相近）
+        """
+        if not predictions:
+            return 0.0
+        eps = 1e-10
+        probs = sorted(predictions.items(), key=lambda x: -x[1])
+        p_actual = max(eps, predictions.get(actual_outcome, 0.0))
+
+        # 主项：对实际结果的对数梯度的惩罚
+        # 离散 Hyvärinen：S = -2*log(p_actual) - sum (log p_i 的相邻差)^2
+        main = -2.0 * math.log(p_actual)
+
+        # 惩罚项：相邻 log-prob 的二阶差分（鼓励平滑校准）
+        penalty = 0.0
+        log_ps = [math.log(max(p, eps)) for _, p in probs]
+        for i in range(len(log_ps) - 1):
+            penalty += (log_ps[i + 1] - log_ps[i]) ** 2
+
+        return main + penalty
+
     # ------------------------------------------------------------------
     # Brier 分解
     # ------------------------------------------------------------------
