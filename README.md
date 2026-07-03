@@ -6,7 +6,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/ai-nurmamat/EDP/ci.yml?branch=master&label=CI&logo=github)](https://github.com/ai-nurmamat/EDP/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ai-nurmamat/EDP?include_prereleases&label=Release)](https://github.com/ai-nurmamat/EDP/releases)
-[![Python](https://img.shields.io/pypi/pyversions/edp-framework)](https://pypi.org/project/edp-framework/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://github.com/ai-nurmamat/EDP/blob/master/pyproject.toml)
 [![License: MIT](https://img.shields.io/github/license/ai-nurmamat/EDP?color=blue)](https://github.com/ai-nurmamat/EDP/blob/master/LICENSE)
 [![Coverage](https://img.shields.io/badge/coverage-77%25-brightgreen)](https://github.com/ai-nurmamat/EDP/actions/workflows/ci.yml)
 [![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-261230.svg)](https://docs.astral.sh/ruff/)
