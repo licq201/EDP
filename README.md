@@ -141,16 +141,19 @@ print(result["probabilities"])
 edp/
 ├── src/python/
 │   ├── __init__.py           # 包导出
-│   ├── core.py               # L0: Outcome/Quote/Evidence/Snapshot/EventGraph/DomainAdapter
+│   ├── core.py               # L0: Outcome/Quote/Evidence(定向)/Snapshot/EventGraph/DomainAdapter
 │   ├── probability_engine.py  # L1-3: Shin/Bayesian/Flow/Glicko-2
-│   ├── online_aggregator.py   # L2: ML-Poly/EWA/Ridge
+│   ├── online_aggregator.py   # L2: ML-Poly/EWA/Ridge/在线贝叶斯堆叠
 │   ├── flow_amplification.py  # L3: 倍增/BFS/级联
-│   ├── domain_awareness.py    # L4: 融合/共识/异常
+│   ├── domain_awareness.py    # L4: 融合/共识/异常/模型多样性
 │   ├── allocation_engine.py   # L5: Kelly/Markowitz/三原则
-│   ├── calibration.py         # L6: Brier/Log/CRPS/校准曲线
+│   ├── calibration.py         # L6: Brier/Log/Hyvärinen/CRPS/校准曲线
+│   ├── conformal.py           # L7: Split Conformal/ACI/AgACI（2025 前沿）
 │   └── edp.py                 # 顶层 EDP 接口
 ├── tests/python/
-├── examples/python/
+├── examples/python/           # basic_usage.py
+├── examples/notebooks/        # startup_funding.ipynb / football_score.ipynb
+├── mcp/server.py              # MCP Server（暴露 EDP 给 AI 助手）
 └── docs/theory/references.md
 ```
 
@@ -162,12 +165,14 @@ V2.0 相对 V1（4.1）的重大变更：
 
 | 变更项 | V1 (4.1) | V2.0 |
 |--------|----------|------|
-| 架构层数 | 5 层 | 6 层（新增校准层） |
+| 架构层数 | 5 层 | 7 层（新增校准层 L6 + 保形预测层 L7） |
 | 顶层接口 | 无统一入口 | `EDP` 类一键分析 |
 | 域适配 | 硬编码 | `DomainAdapter` + `GenericDomain` |
 | 事件关系 | 固定 | `EventGraph`（链/完全连接/自定义） |
-| 在线聚合 | 无 | `OnlineAggregator`（ML-Poly/EWA/Ridge） |
-| 校准 | 无 | `CalibrationEngine`（Brier分解/校准曲线） |
+| 在线聚合 | 无 | `OnlineAggregator`（ML-Poly/EWA/Ridge/在线贝叶斯堆叠） |
+| 校准 | 无 | `CalibrationEngine`（Brier分解/Log/Hyvärinen/校准曲线） |
+| 保形预测 | 无 | `ConformalEngine`（Split/ACI/AgACI，有限样本覆盖率保证） |
+| 定向证据 | 无 | `Evidence.outcome_id`（指向具体结果，避免概率拉平） |
 | 风险警示 | 简单声明 | 每个模块顶部强化警示 + AllocationEngine 详细警示 |
 
 V1 的 `flow_analyzer.py`、`scheme_designer.py` 已移除，功能分别合并到 `flow_amplification.py`、`allocation_engine.py`。

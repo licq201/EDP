@@ -2,13 +2,21 @@
  * EDP - Expectation Domain Perception Method
  * Core probability engine implementation (TypeScript).
  *
+ * ⚠️ LEGACY V1 IMPLEMENTATION (v4.1.0) ⚠️
+ * This TypeScript port implements the V1 five-layer architecture and has NOT
+ * been upgraded to V2.0 (seven-layer architecture with Conformal Prediction,
+ * Online Bayesian Stacking, Hyvärinen score, model diversity, etc.).
+ * The authoritative V2.0 implementation is the Python package under
+ * `src/python/`. This TS module is kept for historical reference and will be
+ * upgraded in a future release.
+ *
  * This module implements the core probability analysis engine based on:
  * - Shin method for true probability extraction (Shin, 1992)
  * - Bayesian updating for probability flow analysis
  * - Kelly criterion variant for resource allocation
  *
  * @module edp-framework
- * @version 4.1.0
+ * @version 4.1.0 (legacy)
  * @license MIT
  *
  * DISCLAIMER: For ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.

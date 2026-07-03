@@ -83,19 +83,17 @@ class OnlineAggregator:
         self.algorithm = self.config.get("algorithm", "mlpoly")
         if self.algorithm not in self.SUPPORTED_ALGORITHMS:
             raise ValueError(
-                f"Unknown algorithm: {self.algorithm}. "
-                f"Use one of {self.SUPPORTED_ALGORITHMS}"
+                f"Unknown algorithm: {self.algorithm}. " f"Use one of {self.SUPPORTED_ALGORITHMS}"
             )
         self.eta = self.config.get("eta", 1.0)
         self.loss_type = self.config.get("loss_type", "square")
         if self.loss_type not in self.SUPPORTED_LOSSES:
             raise ValueError(
-                f"Unknown loss_type: {self.loss_type}. "
-                f"Use one of {self.SUPPORTED_LOSSES}"
+                f"Unknown loss_type: {self.loss_type}. " f"Use one of {self.SUPPORTED_LOSSES}"
             )
         self.ridge_lambda = self.config.get("ridge_lambda", 1.0)
         # Online Bayesian Stacking（Soft-Bayes）参数
-        self.obs_eta = self.config.get("obs_eta", 0.1)     # OBS 学习率
+        self.obs_eta = self.config.get("obs_eta", 0.1)  # OBS 学习率
         self.obs_mixing = self.config.get("obs_mixing", 0.5)  # Soft-Bayes mixing
 
         self.weights: dict[str, float] = {}
@@ -113,11 +111,9 @@ class OnlineAggregator:
         n = len(source_ids)
         if n == 0:
             raise ValueError("source_ids cannot be empty")
-        self.weights = {sid: 1.0 / n for sid in source_ids}
+        self.weights = dict.fromkeys(source_ids, 1.0 / n)
         self.losses = {sid: [] for sid in source_ids}
-        self.performances = {
-            sid: SourcePerformance(source_id=sid) for sid in source_ids
-        }
+        self.performances = {sid: SourcePerformance(source_id=sid) for sid in source_ids}
         self._source_order = list(source_ids)
         self._initialized = True
         # Ridge 初始化
@@ -250,9 +246,7 @@ class OnlineAggregator:
         if not self.losses:
             return
         # 累积损失
-        cum_losses = {
-            sid: sum(losses) for sid, losses in self.losses.items()
-        }
+        cum_losses = {sid: sum(losses) for sid, losses in self.losses.items()}
         min_cum = min(cum_losses.values()) if cum_losses else 0.0
 
         raw_weights: dict[str, float] = {}
@@ -335,9 +329,7 @@ class OnlineAggregator:
                 result[i] = M[i][n] / M[i][i]
         return result
 
-    def _update_obs(
-        self, predictions: dict[str, float], actual: float
-    ) -> None:
+    def _update_obs(self, predictions: dict[str, float], actual: float) -> None:
         """
         Online Bayesian Stacking（Soft-Bayes 算法）。
 
@@ -354,9 +346,7 @@ class OnlineAggregator:
             return
 
         # 组合预测
-        combined = sum(
-            self.weights.get(k, 0.0) * v for k, v in predictions.items()
-        )
+        combined = sum(self.weights.get(k, 0.0) * v for k, v in predictions.items())
         if abs(combined) < 1e-12:
             combined = 1e-6
 
@@ -369,9 +359,7 @@ class OnlineAggregator:
             gain = max(gain, 1e-6)
             old_w = self.weights.get(sid, 1e-6)
             # Soft-Bayes：w_k ← w_k × [(1−η) + η × gain / combined_gain]
-            updated = old_w * (
-                (1.0 - self.obs_eta) + self.obs_eta * gain
-            )
+            updated = old_w * ((1.0 - self.obs_eta) + self.obs_eta * gain)
             new_weights[sid] = max(updated, 1e-12)
 
         # mixing：与均匀混合，防止权重塌缩

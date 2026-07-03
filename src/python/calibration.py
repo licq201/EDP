@@ -123,9 +123,7 @@ class CalibrationEngine:
         }
 
     @staticmethod
-    def _compute_brier(
-        predictions: dict[str, float], actual_outcome: str
-    ) -> float:
+    def _compute_brier(predictions: dict[str, float], actual_outcome: str) -> float:
         """Brier Score: BS = (1/N) Σ(f_t − o_t)²。"""
         n = len(predictions)
         if n == 0:
@@ -137,9 +135,7 @@ class CalibrationEngine:
         return total / n
 
     @staticmethod
-    def _compute_log_score(
-        predictions: dict[str, float], actual_outcome: str
-    ) -> float:
+    def _compute_log_score(predictions: dict[str, float], actual_outcome: str) -> float:
         """
         Log Score: LS = −[y·log(p) + (1−y)·log(1−p)]
         对极端错误惩罚更重。
@@ -149,9 +145,7 @@ class CalibrationEngine:
         return -math.log(p)
 
     @staticmethod
-    def hyvarinen_score(
-        predictions: dict[str, float], actual_outcome: str
-    ) -> float:
+    def hyvarinen_score(predictions: dict[str, float], actual_outcome: str) -> float:
         """
         Hyvärinen score（离散多结果变体）。
 
@@ -231,7 +225,7 @@ class CalibrationEngine:
         resolution = 0.0
         brier_total = 0.0
 
-        for bin_idx, records in bin_data.items():
+        for _, records in bin_data.items():
             n_k = len(records)
             mean_forecast = sum(r[0] for r in records) / n_k
             mean_actual = sum(r[1] for r in records) / n_k
@@ -354,8 +348,7 @@ class CalibrationEngine:
         n = len(self.history)
         top1_correct = sum(1 for r in self.history if r.is_top1_correct)
         brier_scores = [
-            self._compute_brier(r.predicted_probabilities, r.actual_outcome)
-            for r in self.history
+            self._compute_brier(r.predicted_probabilities, r.actual_outcome) for r in self.history
         ]
         log_scores = [
             self._compute_log_score(r.predicted_probabilities, r.actual_outcome)

@@ -75,11 +75,11 @@ class SourceReliability(Enum):
 class StabilityLevel(Enum):
     """态势稳定性分类。"""
 
-    STABLE = "stable"            # 高共识，低异常
-    UNSTABLE = "unstable"        # 低共识，无异常
-    EMERGING = "emerging"        # 中共识，强动量
-    AMBIGUOUS = "ambiguous"      # 中共识，高分歧
-    ANOMALOUS = "anomalous"      # 存在异常
+    STABLE = "stable"  # 高共识，低异常
+    UNSTABLE = "unstable"  # 低共识，无异常
+    EMERGING = "emerging"  # 中共识，强动量
+    AMBIGUOUS = "ambiguous"  # 中共识，高分歧
+    ANOMALOUS = "anomalous"  # 存在异常
 
 
 @dataclass
@@ -112,7 +112,7 @@ class EvidenceSource:
 
     @property
     def reliability_weight(self) -> float:
-        return self.reliability.weight
+        return float(self.reliability.weight)
 
 
 @dataclass
@@ -175,22 +175,20 @@ class DomainAwarenessEngine:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self.time_decay_hours = self.config.get(
-            "time_decay_hours", self.TIME_DECAY_HOURS
+        self.time_decay_hours: float = float(
+            self.config.get("time_decay_hours", self.TIME_DECAY_HOURS)
         )
-        self.consensus_high = self.config.get("consensus_high", self.CONSENSUS_HIGH)
-        self.consensus_low = self.config.get("consensus_low", self.CONSENSUS_LOW)
-        self.anomaly_threshold = self.config.get(
-            "anomaly_threshold", self.ANOMALY_THRESHOLD
+        self.consensus_high: float = float(self.config.get("consensus_high", self.CONSENSUS_HIGH))
+        self.consensus_low: float = float(self.config.get("consensus_low", self.CONSENSUS_LOW))
+        self.anomaly_threshold: float = float(
+            self.config.get("anomaly_threshold", self.ANOMALY_THRESHOLD)
         )
 
     # ------------------------------------------------------------------
     # 源权重计算
     # ------------------------------------------------------------------
 
-    def calculate_source_weight(
-        self, source: EvidenceSource, now: datetime | None = None
-    ) -> float:
+    def calculate_source_weight(self, source: EvidenceSource, now: datetime | None = None) -> float:
         """
         计算源权重：
             w_i = reliability_i × confidence_i × 2^{−Δt/t½}
@@ -198,28 +196,25 @@ class DomainAwarenessEngine:
         now = now or datetime.now()
         delta_hours = max((now - source.timestamp).total_seconds() / 3600.0, 0.0)
         temporal_decay = 2.0 ** (-delta_hours / self.time_decay_hours)
-        return source.reliability_weight * source.confidence * temporal_decay
+        return float(source.reliability_weight * source.confidence * temporal_decay)
 
     def _normalize_weights(self, weights: dict[str, float]) -> dict[str, float]:
         total = sum(weights.values())
         if total <= 0:
             n = len(weights)
-            return {k: 1.0 / n for k in weights} if n > 0 else {}
+            result: dict[str, float] = dict.fromkeys(weights, 1.0 / n) if n > 0 else {}
+            return result
         return {k: v / total for k, v in weights.items()}
 
     # ------------------------------------------------------------------
     # 融合方法
     # ------------------------------------------------------------------
 
-    def _fuse_linear(
-        self, sources: list[EvidenceSource], weights: dict[str, float]
-    ) -> float:
+    def _fuse_linear(self, sources: list[EvidenceSource], weights: dict[str, float]) -> float:
         """线性池：p = Σ(w_i × p_i)。"""
         return sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
 
-    def _fuse_log_odds(
-        self, sources: list[EvidenceSource], weights: dict[str, float]
-    ) -> float:
+    def _fuse_log_odds(self, sources: list[EvidenceSource], weights: dict[str, float]) -> float:
         """对数优比池：logit(p) = Σ(w_i × logit(p_i))。"""
         eps = 1e-6
         logit_sum = 0.0
@@ -287,8 +282,7 @@ class DomainAwarenessEngine:
             return 0.0
         weighted_mean = sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
         variance = sum(
-            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2
-            for s in sources
+            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2 for s in sources
         )
         std = math.sqrt(max(variance, 0.0))
         return max(0.0, 1.0 - min(std / 0.5, 1.0))
@@ -302,8 +296,7 @@ class DomainAwarenessEngine:
 
         weighted_mean = sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
         variance = sum(
-            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2
-            for s in sources
+            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2 for s in sources
         )
         std = math.sqrt(max(variance, 0.0))
         if std < 1e-6:
@@ -386,9 +379,7 @@ class DomainAwarenessEngine:
             )
 
         # 1. 计算源权重
-        raw_weights = {
-            s.source_id: self.calculate_source_weight(s) for s in sources
-        }
+        raw_weights = {s.source_id: self.calculate_source_weight(s) for s in sources}
         weights = self._normalize_weights(raw_weights)
 
         # 2. 融合
@@ -419,9 +410,7 @@ class DomainAwarenessEngine:
         effective_weight = sum(raw_weights.values())
         max_possible = len(sources) * 1.0  # 最大可能权重（reliability=1, confidence=1, decay=1）
         effective_factor = min(effective_weight / max(max_possible, 1e-6), 1.0)
-        avg_reliability = (
-            sum(s.reliability_weight for s in sources) / len(sources)
-        )
+        avg_reliability = sum(s.reliability_weight for s in sources) / len(sources)
         confidence = self._calibrate_confidence(
             consensus, source_factor, effective_factor, avg_reliability, len(anomalies)
         )

@@ -59,10 +59,10 @@ from typing import Any
 class RiskTier(Enum):
     """风险分层。"""
 
-    CONSERVATIVE = "conservative"   # 保守：极低 Kelly 分数
-    BALANCED = "balanced"           # 平衡：低 Kelly 分数
-    AGGRESSIVE = "aggressive"       # 进取：中 Kelly 分数
-    EXTREME = "extreme"             # 极端：高 Kelly 分数（不推荐）
+    CONSERVATIVE = "conservative"  # 保守：极低 Kelly 分数
+    BALANCED = "balanced"  # 平衡：低 Kelly 分数
+    AGGRESSIVE = "aggressive"  # 进取：中 Kelly 分数
+    EXTREME = "extreme"  # 极端：高 Kelly 分数（不推荐）
 
 
 @dataclass
@@ -109,11 +109,11 @@ class AllocationResult:
 
     outcome_id: str
     allocated_amount: float
-    allocation_fraction: float       # 占总预算比例
+    allocation_fraction: float  # 占总预算比例
     kelly_optimal: float
-    kelly_applied: float             # 实际应用的 Kelly 分数
+    kelly_applied: float  # 实际应用的 Kelly 分数
     expected_value: float
-    risk_score: float                # [0,1]，越高越风险
+    risk_score: float  # [0,1]，越高越风险
     reasoning: str = ""
 
     def is_within_limit(self, max_fraction: float = 0.2) -> bool:
@@ -176,36 +176,30 @@ class AllocationEngine:
     ════════════════════════════════════════════════════════════════
     """
 
-    KELLY_FRACTION_DEFAULT = 0.25     # quarter-Kelly
+    KELLY_FRACTION_DEFAULT = 0.25  # quarter-Kelly
     MAX_CONCENTRATION_DEFAULT = 0.20  # 单票上限 20%
-    MIN_PROBABILITY = 0.05            # 概率过低不入选
-    MIN_RETURN_MULTIPLIER = 1.1       # 回报过低不入选
+    MIN_PROBABILITY = 0.05  # 概率过低不入选
+    MIN_RETURN_MULTIPLIER = 1.1  # 回报过低不入选
 
     # 风险分层 Kelly 系数
     RISK_TIER_FRACTIONS = {
         RiskTier.CONSERVATIVE: 0.10,
         RiskTier.BALANCED: 0.25,
         RiskTier.AGGRESSIVE: 0.50,
-        RiskTier.EXTREME: 1.00,   # 不推荐
+        RiskTier.EXTREME: 1.00,  # 不推荐
     }
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self.kelly_fraction = self.config.get(
-            "kelly_fraction", self.KELLY_FRACTION_DEFAULT
-        )
+        self.kelly_fraction = self.config.get("kelly_fraction", self.KELLY_FRACTION_DEFAULT)
         self.max_concentration = self.config.get(
             "max_concentration", self.MAX_CONCENTRATION_DEFAULT
         )
-        self.min_probability = self.config.get(
-            "min_probability", self.MIN_PROBABILITY
-        )
+        self.min_probability = self.config.get("min_probability", self.MIN_PROBABILITY)
         self.min_return_multiplier = self.config.get(
             "min_return_multiplier", self.MIN_RETURN_MULTIPLIER
         )
-        self.target_diversification = self.config.get(
-            "target_diversification", 0.6
-        )
+        self.target_diversification = self.config.get("target_diversification", 0.6)
 
     # ------------------------------------------------------------------
     # 三原则验证
@@ -231,8 +225,7 @@ class AllocationEngine:
             return False, f"概率过低 ({leg.probability:.3f} < {self.min_probability})"
         if leg.return_multiplier < self.min_return_multiplier:
             return False, (
-                f"回报倍数过低 ({leg.return_multiplier:.3f} "
-                f"< {self.min_return_multiplier})"
+                f"回报倍数过低 ({leg.return_multiplier:.3f} " f"< {self.min_return_multiplier})"
             )
 
         return True, "通过三原则验证"
@@ -278,8 +271,7 @@ class AllocationEngine:
         """
         bundle = AllocationBundle(budget=budget, risk_tier=risk_tier)
         bundle.warnings.append(
-            "⚠️ 本分配方案仅供学术研究，不构成投资建议。"
-            "实际决策可能导致本金全部损失。"
+            "⚠️ 本分配方案仅供学术研究，不构成投资建议。" "实际决策可能导致本金全部损失。"
         )
 
         if budget <= 0:
@@ -290,9 +282,7 @@ class AllocationEngine:
         # 选择风险分层对应的 Kelly 系数
         tier_fraction = self.RISK_TIER_FRACTIONS.get(risk_tier, self.kelly_fraction)
         if risk_tier == RiskTier.EXTREME:
-            bundle.warnings.append(
-                "⚠️ EXTREME 风险分层使用全 Kelly，破产风险显著，不推荐。"
-            )
+            bundle.warnings.append("⚠️ EXTREME 风险分层使用全 Kelly，破产风险显著，不推荐。")
 
         # 1. 三原则筛选
         valid_legs: list[tuple[AllocationLeg, str]] = []
@@ -364,11 +354,11 @@ class AllocationEngine:
                 )
             )
 
-        bundle.allocated_amount = sum(l.allocated_amount for l in bundle.legs)
+        bundle.allocated_amount = sum(leg.allocated_amount for leg in bundle.legs)
         bundle.unallocated_amount = budget - bundle.allocated_amount
-        bundle.expected_total_value = sum(l.expected_value for l in bundle.legs)
+        bundle.expected_total_value = sum(leg.expected_value for leg in bundle.legs)
         bundle.max_concentration = max(
-            (l.allocation_fraction for l in bundle.legs), default=0.0
+            (leg.allocation_fraction for leg in bundle.legs), default=0.0
         )
 
         # 多样化评分
@@ -384,7 +374,7 @@ class AllocationEngine:
         """
         if not legs:
             return 0.0
-        hhi = sum(l.allocation_fraction ** 2 for l in legs)
+        hhi = sum(leg.allocation_fraction**2 for leg in legs)
         return max(0.0, 1.0 - hhi)
 
     # ------------------------------------------------------------------
@@ -428,9 +418,7 @@ class AllocationEngine:
                 adjustments[leg.outcome_id] = deficit * 0.5  # 待补充
 
         # 分配 surplus 到接收方
-        receivers = {
-            oid: adj for oid, adj in adjustments.items() if adj > 0
-        }
+        receivers = {oid: adj for oid, adj in adjustments.items() if adj > 0}
         total_receiver_demand = sum(receivers.values())
         if total_receiver_demand > 0 and surplus > 0:
             scale = min(surplus / total_receiver_demand, 1.0)
@@ -448,17 +436,17 @@ class AllocationEngine:
             leg.allocated_amount = new_fraction * bundle.budget
 
         # 重新归一化
-        total = sum(l.allocation_fraction for l in bundle.legs)
+        total = sum(leg.allocation_fraction for leg in bundle.legs)
         if total > 0:
             for leg in bundle.legs:
                 leg.allocation_fraction = leg.allocation_fraction / total
                 leg.allocated_amount = leg.allocation_fraction * bundle.budget
 
-        bundle.allocated_amount = sum(l.allocated_amount for l in bundle.legs)
+        bundle.allocated_amount = sum(leg.allocated_amount for leg in bundle.legs)
         bundle.unallocated_amount = bundle.budget - bundle.allocated_amount
         bundle.diversification_score = self._calculate_diversification(bundle.legs)
         bundle.max_concentration = max(
-            (l.allocation_fraction for l in bundle.legs), default=0.0
+            (leg.allocation_fraction for leg in bundle.legs), default=0.0
         )
 
         return bundle

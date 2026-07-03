@@ -40,7 +40,7 @@ ACI 更新（在线，分布漂移鲁棒）：
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -48,21 +48,21 @@ from typing import Any
 class ConformalConfig:
     """保形预测配置。"""
 
-    alpha: float = 0.1                # 目标误覆盖率（1−α 为目标覆盖率，默认 90%）
-    method: str = "split"             # split / aci / agaci
-    aci_gamma: float = 0.01           # ACI 学习率
+    alpha: float = 0.1  # 目标误覆盖率（1−α 为目标覆盖率，默认 90%）
+    method: str = "split"  # split / aci / agaci
+    aci_gamma: float = 0.01  # ACI 学习率
     agaci_gammas: tuple[float, ...] = (0.001, 0.01, 0.05, 0.1)  # AgACI 学习率集
-    window_size: int | None = None    # 校准分数滑动窗口（None=全量）
+    window_size: int | None = None  # 校准分数滑动窗口（None=全量）
 
 
 @dataclass
 class PredictionSet:
     """分类预测集结果。"""
 
-    prediction_set: list[str]         # 包含的结果 ID（满足覆盖率保证）
-    coverage_target: float            # 目标覆盖率 1−α
-    threshold: float                  # 使用的 nonconformity 分位数
-    alpha_used: float                 # 实际使用的 α（ACI 自适应后）
+    prediction_set: list[str]  # 包含的结果 ID（满足覆盖率保证）
+    coverage_target: float  # 目标覆盖率 1−α
+    threshold: float  # 使用的 nonconformity 分位数
+    alpha_used: float  # 实际使用的 α（ACI 自适应后）
     is_empty: bool = False
     is_full: bool = False
     method: str = "split"
@@ -120,16 +120,13 @@ class ConformalEngine:
         self._aci_errors: list[int] = []  # 1=未覆盖
 
         # AgACI 状态：每个 gamma 一个独立 ACI
-        self._agaci_alphas: dict[float, float] = {
-            g: self.config.alpha for g in self.config.agaci_gammas
-        }
+        self._agaci_alphas: dict[float, float] = dict.fromkeys(
+            self.config.agaci_gammas, self.config.alpha
+        )
         self._agaci_weights: dict[float, float] = {
-            g: 1.0 / len(self.config.agaci_gammas)
-            for g in self.config.agaci_gammas
+            g: 1.0 / len(self.config.agaci_gammas) for g in self.config.agaci_gammas
         }
-        self._agaci_errors: dict[float, list[int]] = {
-            g: [] for g in self.config.agaci_gammas
-        }
+        self._agaci_errors: dict[float, list[int]] = {g: [] for g in self.config.agaci_gammas}
 
         self.n_updates: int = 0
 
@@ -147,9 +144,7 @@ class ConformalEngine:
             rec = CalibrationRecord(preds, actual)
             self.calibration_scores.append(rec.nonconformity())
 
-    def add_calibration_point(
-        self, predictions: dict[str, float], actual: str
-    ) -> None:
+    def add_calibration_point(self, predictions: dict[str, float], actual: str) -> None:
         """添加单个校准点。"""
         rec = CalibrationRecord(predictions, actual)
         score = rec.nonconformity()
@@ -204,10 +199,7 @@ class ConformalEngine:
         alpha_used: float,
         method: str,
     ) -> PredictionSet:
-        pred_set = [
-            oid for oid, p in predictions.items()
-            if (1.0 - p) <= threshold + 1e-12
-        ]
+        pred_set = [oid for oid, p in predictions.items() if (1.0 - p) <= threshold + 1e-12]
         return PredictionSet(
             prediction_set=pred_set,
             coverage_target=1.0 - alpha_used,
@@ -221,15 +213,11 @@ class ConformalEngine:
 
     def _predict_split(self, predictions: dict[str, float]) -> PredictionSet:
         threshold = self._quantile(self.calibration_scores, self.config.alpha)
-        return self._build_set(
-            predictions, threshold, self.config.alpha, "split"
-        )
+        return self._build_set(predictions, threshold, self.config.alpha, "split")
 
     def _predict_aci(self, predictions: dict[str, float]) -> PredictionSet:
         threshold = self._quantile(self.calibration_scores, self._aci_alpha)
-        return self._build_set(
-            predictions, threshold, self._aci_alpha, "aci"
-        )
+        return self._build_set(predictions, threshold, self._aci_alpha, "aci")
 
     def _predict_agaci(self, predictions: dict[str, float]) -> PredictionSet:
         """AgACI：按权重聚合各 ACI 的预测集（并集，按权重加权）。"""
@@ -242,25 +230,18 @@ class ConformalEngine:
 
         # 加权阈值（保守取较高分位数的加权平均）
         total_w = sum(w for _, w in sub_thresholds)
-        weighted_threshold = (
-            sum(t * w for t, w in sub_thresholds) / max(total_w, 1e-12)
-        )
+        weighted_threshold = sum(t * w for t, w in sub_thresholds) / max(total_w, 1e-12)
         # AgACI 的有效 α 用加权平均
-        weighted_alpha = (
-            sum(self._agaci_alphas[g] * self._agaci_weights[g]
-                for g in self._agaci_alphas) / max(total_w, 1e-12)
-        )
-        return self._build_set(
-            predictions, weighted_threshold, weighted_alpha, "agaci"
-        )
+        weighted_alpha = sum(
+            self._agaci_alphas[g] * self._agaci_weights[g] for g in self._agaci_alphas
+        ) / max(total_w, 1e-12)
+        return self._build_set(predictions, weighted_threshold, weighted_alpha, "agaci")
 
     # ------------------------------------------------------------------
     # 在线更新（ACI / AgACI）
     # ------------------------------------------------------------------
 
-    def update(
-        self, predictions: dict[str, float], actual: str
-    ) -> dict[str, Any]:
+    def update(self, predictions: dict[str, float], actual: str) -> dict[str, Any]:
         """
         观测真实值后在线更新。
 

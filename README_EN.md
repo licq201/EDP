@@ -4,6 +4,22 @@
 
 ---
 
+> ## ⚠️ Version Notice
+>
+> **EDP has been upgraded to V2.0** with a **seven-layer stacked architecture**
+> (adding L6 Calibration and **L7 Conformal Prediction** — a 2025 frontier method
+> with finite-sample coverage guarantees, plus Online Bayesian Stacking, Hyvärinen
+> score, and model-diversity metrics).
+>
+> The English README below documents the **V1 five-layer architecture** and is
+> kept for historical reference. For the authoritative, up-to-date V2.0
+> specification, please see **[README.md (中文)](README.md)**.
+>
+> The framework is for **academic research and educational purposes only** and
+> does **not** constitute investment, betting, or any decision-making advice.
+
+---
+
 ## 1. Overview
 
 **Expectation Domain Perception Method (EDP)** is an academic computational framework for **probabilistic analysis and statistical research**. It integrates four cooperative analytical layers which, starting from raw market quotes, propagate information through Bayesian inference and time-series momentum analysis, ultimately producing multi-source-fused situation assessments and resource allocation plans.

@@ -33,28 +33,29 @@ from typing import Any
 
 from .core import Snapshot
 
-
 # ======================================================================
 # Enums and Constants
 # ======================================================================
 
+
 class FlowDirection(Enum):
     """概率流向分类。"""
 
-    UPWARD = "upward"    # 概率上升
+    UPWARD = "upward"  # 概率上升
     DOWNWARD = "downward"  # 概率下降
-    STABLE = "stable"    # 无显著变化
+    STABLE = "stable"  # 无显著变化
 
 
 # 统计常数
-SHIN_ITERATIONS = 100       # Shin 迭代收敛上限
-SHIN_TOLERANCE = 1e-10      # 收敛阈值
-BETA_PRIOR_STRENGTH = 2.0   # Beta 先验默认样本量
+SHIN_ITERATIONS = 100  # Shin 迭代收敛上限
+SHIN_TOLERANCE = 1e-10  # 收敛阈值
+BETA_PRIOR_STRENGTH = 2.0  # Beta 先验默认样本量
 
 
 # ======================================================================
 # Data Classes
 # ======================================================================
+
 
 @dataclass
 class TrueProbabilityResult:
@@ -138,12 +139,12 @@ class FlowResult:
     """单个结果的概率流向分析结果。"""
 
     outcome: str
-    flow_pp: float                  # 流向（百分点）
+    flow_pp: float  # 流向（百分点）
     direction: FlowDirection
     initial_prob: float
     latest_prob: float
     momentum_score: float
-    significance: str = "low"       # low / medium / high
+    significance: str = "low"  # low / medium / high
     velocity: float = 0.0
     acceleration: float = 0.0
 
@@ -208,7 +209,7 @@ class Glicko2Rating:
 
     team_id: str
     rating: float = 1500.0
-    rd: float = 350.0           # Rating deviation
+    rd: float = 350.0  # Rating deviation
     volatility: float = 0.06
     games_played: int = 0
     last_game_date: datetime | None = None
@@ -273,6 +274,7 @@ class Glicko2Rating:
 # ProbabilityEngine
 # ======================================================================
 
+
 class ProbabilityEngine:
     """
     概率提取 + 贝叶斯 + 流向分析引擎 (L1 + L2 + L3)。
@@ -294,15 +296,11 @@ class ProbabilityEngine:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self.flow_threshold_low = self.config.get(
-            "flow_threshold_low", self.FLOW_THRESHOLD_LOW
-        )
+        self.flow_threshold_low = self.config.get("flow_threshold_low", self.FLOW_THRESHOLD_LOW)
         self.flow_threshold_medium = self.config.get(
             "flow_threshold_medium", self.FLOW_THRESHOLD_MEDIUM
         )
-        self.flow_threshold_high = self.config.get(
-            "flow_threshold_high", self.FLOW_THRESHOLD_HIGH
-        )
+        self.flow_threshold_high = self.config.get("flow_threshold_high", self.FLOW_THRESHOLD_HIGH)
         self.prior_strength = self.config.get("prior_strength", BETA_PRIOR_STRENGTH)
         self.evidence_weight = self.config.get("evidence_weight", 1.0)
         self.use_iterative_shin = self.config.get("use_iterative_shin", True)
@@ -368,9 +366,7 @@ class ProbabilityEngine:
             confidence_interval=conf_intervals,
         )
 
-    def _iterative_shin_method(
-        self, implied_probs: dict[str, float]
-    ) -> dict[str, float]:
+    def _iterative_shin_method(self, implied_probs: dict[str, float]) -> dict[str, float]:
         """Shin 迭代法求解真实概率。"""
         n = len(implied_probs)
         if n == 0:
@@ -418,15 +414,10 @@ class ProbabilityEngine:
         condition_outcomes: list[str],
     ) -> dict[str, float]:
         """计算条件概率 P(A|B) = P(A∩B)/P(B)。"""
-        condition_total = sum(
-            outcome_probabilities.get(o, 0.0) for o in condition_outcomes
-        )
+        condition_total = sum(outcome_probabilities.get(o, 0.0) for o in condition_outcomes)
         if condition_total == 0:
             return dict.fromkeys(condition_outcomes, 0.0)
-        return {
-            o: outcome_probabilities.get(o, 0.0) / condition_total
-            for o in condition_outcomes
-        }
+        return {o: outcome_probabilities.get(o, 0.0) / condition_total for o in condition_outcomes}
 
     # ------------------------------------------------------------------
     # 贝叶斯推断
@@ -452,8 +443,7 @@ class ProbabilityEngine:
         posterior_beta = prior.beta + (evidence_trials - evidence_successes)
         expected_prob = posterior_alpha / (posterior_alpha + posterior_beta)
         variance = (posterior_alpha * posterior_beta) / (
-            (posterior_alpha + posterior_beta) ** 2
-            * (posterior_alpha + posterior_beta + 1.0)
+            (posterior_alpha + posterior_beta) ** 2 * (posterior_alpha + posterior_beta + 1.0)
         )
         std_dev = math.sqrt(variance)
 
@@ -503,8 +493,7 @@ class ProbabilityEngine:
 
         expected_prob = combined_alpha / (combined_alpha + combined_beta)
         variance = (combined_alpha * combined_beta) / (
-            (combined_alpha + combined_beta) ** 2
-            * (combined_alpha + combined_beta + 1.0)
+            (combined_alpha + combined_beta) ** 2 * (combined_alpha + combined_beta + 1.0)
         )
         std_dev = math.sqrt(variance)
 
@@ -605,9 +594,7 @@ class ProbabilityEngine:
         time_hours = max(time_delta.total_seconds() / 3600.0, 0.001)
 
         # 取所有结果 ID 的并集
-        all_outcomes = set(initial_snapshot.probabilities) | set(
-            latest_snapshot.probabilities
-        )
+        all_outcomes = set(initial_snapshot.probabilities) | set(latest_snapshot.probabilities)
 
         for outcome in all_outcomes:
             initial_prob = initial_snapshot.probabilities.get(outcome, 0.0)
@@ -651,11 +638,9 @@ class ProbabilityEngine:
                     weights = [1.0 / (i + 1) for i in range(len(historical_flows))]
                     total_w = sum(weights)
                     momentum_score = (
-                        sum(w * f for w, f in zip(weights, historical_flows)) / total_w
+                        sum(w * f for w, f in zip(weights, historical_flows, strict=True)) / total_w
                     )
-                    acceleration = (
-                        velocity - historical_flows[-1] if historical_flows else 0.0
-                    )
+                    acceleration = velocity - historical_flows[-1] if historical_flows else 0.0
 
             flows.append(
                 FlowResult(
@@ -671,9 +656,7 @@ class ProbabilityEngine:
                 )
             )
 
-        aggregate_momentum = (
-            sum(f.momentum_score for f in flows) / max(len(flows), 1)
-        )
+        aggregate_momentum = sum(f.momentum_score for f in flows) / max(len(flows), 1)
 
         return FlowReport(
             initial_snapshot=initial_snapshot,

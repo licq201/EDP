@@ -6,14 +6,15 @@ EDP - 期望域感知方法 (Expectation Domain Perception Method) V2.0
 EDP 是一个通用的概率预测与决策框架。任何可以被分解为
 "若干可能结果 + 若干信息来源" 的问题，都可以用 EDP 处理。
 
-六层堆叠式架构：
+七层堆叠式架构：
     Layer 0: 数据抽象层        (Outcome / Quote / Evidence / Snapshot / EventGraph)
     Layer 1: 概率提取层        (Shin 归一化 / 比例归一化)
-    Layer 2: 推断引擎层        (Beta-Binomial / Glicko-2 / 在线聚合)
+    Layer 2: 推断引擎层        (Beta-Binomial / Glicko-2 / 在线聚合 / 在线贝叶斯堆叠)
     Layer 3: 流向分析层        (概率流向 / 动量 / 倍增评分 / 级联检测)
-    Layer 4: 全域感知层        (线性池 / 对数优比池 / 贝叶斯累积 / 共识动力学)
+    Layer 4: 全域感知层        (线性池 / 对数优比池 / 贝叶斯累积 / 共识动力学 / 模型多样性)
     Layer 5: 资源分配层        (Kelly / Markowitz / 三原则 / 风险分层)
-    Layer 6: 回测与校准层      (Brier / Log / CRPS / 校准曲线)
+    Layer 6: 回测与校准层      (Brier / Log / Hyvärinen / CRPS / 校准曲线)
+    Layer 7: 保形预测层        (Split Conformal / ACI / AgACI — 2025 前沿)
 
 ══════════════════════════════════════════════════════════════════════
 ⚠️⚠️⚠️ 严重风险警示 ⚠️⚠️⚠️
@@ -48,43 +49,6 @@ Example:
     >>> print(result["summary"])
 """
 
-from .core import (
-    DomainAdapter,
-    EventGraph,
-    Evidence,
-    GenericDomain,
-    Outcome,
-    Quote,
-    Snapshot,
-)
-from .probability_engine import (
-    BayesianPosterior,
-    BayesianPrior,
-    FlowDirection,
-    FlowReport,
-    FlowResult,
-    Glicko2Rating,
-    ProbabilityEngine,
-    TrueProbabilityResult,
-)
-from .online_aggregator import (
-    OnlineAggregator,
-    SourcePerformance,
-)
-from .flow_amplification import (
-    AmplificationLevel,
-    AmplificationReport,
-    AmplificationResult,
-    FlowAmplificationEngine,
-)
-from .domain_awareness import (
-    DomainAwarenessEngine,
-    EvidenceSource,
-    EvidenceType,
-    SituationAssessment,
-    SourceReliability,
-    StabilityLevel,
-)
 from .allocation_engine import (
     AllocationBundle,
     AllocationEngine,
@@ -96,13 +60,50 @@ from .calibration import (
     CalibrationEngine,
     PredictionRecord,
 )
+from .conformal import CalibrationRecord as ConformalCalibrationRecord
 from .conformal import (
-    CalibrationRecord as ConformalCalibrationRecord,
     ConformalConfig,
     ConformalEngine,
     PredictionSet,
 )
+from .core import (
+    DomainAdapter,
+    EventGraph,
+    Evidence,
+    GenericDomain,
+    Outcome,
+    Quote,
+    Snapshot,
+)
+from .domain_awareness import (
+    DomainAwarenessEngine,
+    EvidenceSource,
+    EvidenceType,
+    SituationAssessment,
+    SourceReliability,
+    StabilityLevel,
+)
 from .edp import EDP
+from .flow_amplification import (
+    AmplificationLevel,
+    AmplificationReport,
+    AmplificationResult,
+    FlowAmplificationEngine,
+)
+from .online_aggregator import (
+    OnlineAggregator,
+    SourcePerformance,
+)
+from .probability_engine import (
+    BayesianPosterior,
+    BayesianPrior,
+    FlowDirection,
+    FlowReport,
+    FlowResult,
+    Glicko2Rating,
+    ProbabilityEngine,
+    TrueProbabilityResult,
+)
 
 __version__ = "2.0.0"
 __author__ = "EDP Research Team"
@@ -156,4 +157,5 @@ __all__ = [
     "ConformalConfig",
     "ConformalEngine",
     "PredictionSet",
+    "ConformalCalibrationRecord",
 ]

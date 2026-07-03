@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /**
- * SPAF Framework - Basic Usage Example (TypeScript/JavaScript)
+ * EDP Framework - Basic Usage Example (TypeScript/JavaScript)
+ *
+ * ⚠️ LEGACY V1 EXAMPLE ⚠️
+ * This example targets the V1 TypeScript implementation (`src/js/`) and has
+ * NOT been upgraded to V2.0. For V2.0 usage, see the Python examples in
+ * `examples/python/basic_usage.py` and `examples/notebooks/`.
  *
  * This example demonstrates the core workflow:
  * 1. Calculate true probabilities from bookmaker odds

@@ -27,10 +27,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-
 # ======================================================================
 # 基本数据类型
 # ======================================================================
+
 
 @dataclass
 class Outcome:
@@ -130,8 +130,12 @@ class Evidence:
         elif "direction" in self.content:
             d = str(self.content["direction"]).lower()
             return {
-                "upward": 0.65, "bullish": 0.65, "positive": 0.65,
-                "downward": 0.35, "bearish": 0.35, "negative": 0.35,
+                "upward": 0.65,
+                "bullish": 0.65,
+                "positive": 0.65,
+                "downward": 0.35,
+                "bearish": 0.35,
+                "negative": 0.35,
             }.get(d, 0.5)
         return 0.5
 
@@ -162,6 +166,7 @@ class Snapshot:
 # ======================================================================
 # EventGraph — 事件关系图
 # ======================================================================
+
 
 class EventGraph:
     """
@@ -209,21 +214,21 @@ class EventGraph:
         return list(self.nodes.keys())
 
     @staticmethod
-    def chain(ids: list[str], distance: float = 1.0) -> "EventGraph":
+    def chain(ids: list[str], distance: float = 1.0) -> EventGraph:
         """有序链：A ↔ B ↔ C ↔ ..."""
         g = EventGraph()
-        for i in ids:
-            g.add_node(i)
+        for node_id in ids:
+            g.add_node(node_id)
         for i in range(len(ids) - 1):
             g.add_edge(ids[i], ids[i + 1], distance)
         return g
 
     @staticmethod
-    def fully_connected(ids: list[str]) -> "EventGraph":
+    def fully_connected(ids: list[str]) -> EventGraph:
         """完全连接。"""
         g = EventGraph()
-        for i in ids:
-            g.add_node(i)
+        for node_id in ids:
+            g.add_node(node_id)
         for i in range(len(ids)):
             for j in range(i + 1, len(ids)):
                 g.add_edge(ids[i], ids[j])
@@ -233,6 +238,7 @@ class EventGraph:
 # ======================================================================
 # DomainAdapter — 域适配器基类
 # ======================================================================
+
 
 class DomainAdapter(ABC):
     """
@@ -272,8 +278,13 @@ class DomainAdapter(ABC):
     def get_reliability_map(self) -> dict[str, float]:
         """不同来源类型的默认可靠性。"""
         return {
-            "market": 0.95, "model": 0.70, "expert": 0.60,
-            "nlp": 0.50, "sensor": 0.80, "llm": 0.55, "api": 0.75,
+            "market": 0.95,
+            "model": 0.70,
+            "expert": 0.60,
+            "nlp": 0.50,
+            "sensor": 0.80,
+            "llm": 0.55,
+            "api": 0.75,
         }
 
     def extract_evidence(self, raw_data: Any) -> list[Evidence]:

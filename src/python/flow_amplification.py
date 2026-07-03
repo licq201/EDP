@@ -43,12 +43,12 @@ from .probability_engine import FlowDirection, FlowReport
 class AmplificationLevel(Enum):
     """倍增等级分类（基于评分绝对值）。"""
 
-    NONE = "none"                  # < 1
-    LOW = "low"                    # 1 - 3
-    MEDIUM = "medium"              # 3 - 6
-    HIGH = "high"                  # 6 - 10
-    VERY_HIGH = "very_high"        # 10 - 15
-    EXCEPTIONAL = "exceptional"    # >= 15
+    NONE = "none"  # < 1
+    LOW = "low"  # 1 - 3
+    MEDIUM = "medium"  # 3 - 6
+    HIGH = "high"  # 6 - 10
+    VERY_HIGH = "very_high"  # 10 - 15
+    EXCEPTIONAL = "exceptional"  # >= 15
 
 
 @dataclass
@@ -57,9 +57,9 @@ class AmplificationResult:
 
     outcome: str
     base_flow_pp: float
-    directional_consistency: float   # [0, 1]
-    gradient_position: float         # [0, 1]
-    market_momentum: float           # ~[0.7, 1.5]
+    directional_consistency: float  # [0, 1]
+    gradient_position: float  # [0, 1]
+    market_momentum: float  # ~[0.7, 1.5]
     amplification_score: float
     level: AmplificationLevel
     confidence: float = 1.0
@@ -96,9 +96,7 @@ class AmplificationReport:
         }
         return [a for a in self.amplifications if a.level in strong]
 
-    def get_reliable_amplifications(
-        self, min_confidence: float = 0.5
-    ) -> list[AmplificationResult]:
+    def get_reliable_amplifications(self, min_confidence: float = 0.5) -> list[AmplificationResult]:
         return [a for a in self.amplifications if a.is_reliable(min_confidence)]
 
     def get_cascading_signals(self) -> dict[str, list[str]]:
@@ -158,13 +156,9 @@ class FlowAmplificationEngine:
 
     def __init__(self, config: dict[str, Any] | None = None):
         self.config = config or {}
-        self.min_base_flow = self.config.get(
-            "min_base_flow", self.MIN_BASE_FLOW_THRESHOLD
-        )
+        self.min_base_flow = self.config.get("min_base_flow", self.MIN_BASE_FLOW_THRESHOLD)
         self.confidence_decay = self.config.get("confidence_decay", 0.9)
-        self.propagation_decay = self.config.get(
-            "propagation_decay", self.PROPAGATION_DECAY
-        )
+        self.propagation_decay = self.config.get("propagation_decay", self.PROPAGATION_DECAY)
 
     def classify_amplification_level(self, score: float) -> AmplificationLevel:
         """将倍增评分分类为等级。"""
@@ -218,7 +212,10 @@ class FlowAmplificationEngine:
                 FlowDirection.STABLE,
             ):
                 consistent_count += 1.0 if adj_flow.direction == FlowDirection.DOWNWARD else 0.5
-            elif primary_direction == FlowDirection.STABLE and adj_flow.direction == FlowDirection.STABLE:
+            elif (
+                primary_direction == FlowDirection.STABLE
+                and adj_flow.direction == FlowDirection.STABLE
+            ):
                 consistent_count += 0.5
 
         return consistent_count / len(adjacent_outcomes)
@@ -238,9 +235,7 @@ class FlowAmplificationEngine:
         if outcome not in outcome_probabilities:
             return 0.0
 
-        direction_probs = [
-            outcome_probabilities.get(o, 0.0) for o in direction_outcomes
-        ]
+        direction_probs = [outcome_probabilities.get(o, 0.0) for o in direction_outcomes]
         if not direction_probs:
             return 0.5
 
@@ -455,9 +450,8 @@ class FlowAmplificationEngine:
             )
 
         # 聚合统计
-        aggregate_momentum = (
-            sum(a.amplification_score for a in amplifications)
-            / max(len(amplifications), 1)
+        aggregate_momentum = sum(a.amplification_score for a in amplifications) / max(
+            len(amplifications), 1
         )
 
         # 级联风险：高动量 + 低一致性

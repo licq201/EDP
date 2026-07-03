@@ -46,6 +46,14 @@ import math
 from datetime import datetime
 from typing import Any
 
+from .allocation_engine import (
+    AllocationBundle,
+    AllocationEngine,
+    AllocationLeg,
+    RiskTier,
+)
+from .calibration import CalibrationEngine
+from .conformal import ConformalConfig, ConformalEngine, PredictionSet
 from .core import (
     DomainAdapter,
     EventGraph,
@@ -55,31 +63,23 @@ from .core import (
     Quote,
     Snapshot,
 )
-from .probability_engine import (
-    FlowReport,
-    ProbabilityEngine,
-)
-from .online_aggregator import OnlineAggregator
-from .flow_amplification import (
-    AmplificationReport,
-    FlowAmplificationEngine,
-)
 from .domain_awareness import (
     DomainAwarenessEngine,
     EvidenceSource,
     EvidenceType,
     SituationAssessment,
     SourceReliability,
+    StabilityLevel,
 )
-from .allocation_engine import (
-    AllocationBundle,
-    AllocationEngine,
-    AllocationLeg,
-    RiskTier,
+from .flow_amplification import (
+    AmplificationReport,
+    FlowAmplificationEngine,
 )
-from .calibration import CalibrationEngine
-from .conformal import ConformalConfig, ConformalEngine, PredictionSet
-from .domain_awareness import StabilityLevel
+from .online_aggregator import OnlineAggregator
+from .probability_engine import (
+    FlowReport,
+    ProbabilityEngine,
+)
 
 
 class EDP:
@@ -202,8 +202,8 @@ class EDP:
                     self.probabilities.update(result.true_probabilities)
                 except ValueError:
                     # 归一化失败，回退到直接概率
-                    for oid, q in decimal_quotes.items():
-                        direct_probs[oid] = 1.0 / q if q > 1.0 else 0.5
+                    for oid, qv in decimal_quotes.items():
+                        direct_probs[oid] = 1.0 / qv if qv > 1.0 else 0.5
 
         # 直接概率更新
         if direct_probs:
@@ -273,9 +273,7 @@ class EDP:
 
         # 融合（用于整体态势评估与共识/异常分析）
         prior = sum(self.probabilities.values()) / max(len(self.probabilities), 1)
-        assessment = self.domain_engine.assess_situation(
-            sources, prior_probability=prior
-        )
+        assessment = self.domain_engine.assess_situation(sources, prior_probability=prior)
 
         # 用证据做定向 log-odds 更新
         if self.probabilities:
@@ -298,8 +296,7 @@ class EDP:
                     # 定向证据：只更新该结果的 log-odds
                     # 信息量 = logit(p_src) - logit(prior_of_outcome)
                     prior_lo = math.log(
-                        max(self.probabilities[oid], eps)
-                        / max(1.0 - self.probabilities[oid], eps)
+                        max(self.probabilities[oid], eps) / max(1.0 - self.probabilities[oid], eps)
                     )
                     log_odds[oid] += w * (lo_src - prior_lo)
                 else:
@@ -353,17 +350,13 @@ class EDP:
         """流向分析（需 ≥2 个快照）。"""
         if len(self.snapshots) < 2:
             return None
-        return self.prob_engine.analyze_flow(
-            self.snapshots[-2], self.snapshots[-1]
-        )
+        return self.prob_engine.analyze_flow(self.snapshots[-2], self.snapshots[-1])
 
     def analyze_amplification(self, flow: FlowReport) -> AmplificationReport | None:
         """倍增分析。"""
         if not self.event_graph or not flow:
             return None
-        return self.flow_engine.calculate_amplification(
-            flow, self.probabilities, self.event_graph
-        )
+        return self.flow_engine.calculate_amplification(flow, self.probabilities, self.event_graph)
 
     # ------------------------------------------------------------------
     # 资源分配
@@ -406,9 +399,7 @@ class EDP:
                     flow_direction=flow_dir,
                 )
             )
-        bundle = self.alloc_engine.generate_allocation(
-            budget, candidates, risk_tier=risk_tier
-        )
+        bundle = self.alloc_engine.generate_allocation(budget, candidates, risk_tier=risk_tier)
         return self.alloc_engine.optimize_portfolio(bundle)
 
     # ------------------------------------------------------------------
@@ -503,9 +494,7 @@ class EDP:
         # 生成摘要
         top = sorted(self.probabilities.items(), key=lambda x: x[1], reverse=True)
         top_str = f"{top[0][0]} ({top[0][1]:.1%})" if top else "N/A"
-        consensus_str = (
-            f"{assessment.consensus_score:.2f}" if assessment else "N/A"
-        )
+        consensus_str = f"{assessment.consensus_score:.2f}" if assessment else "N/A"
         summary = (
             f"最可能: {top_str} | "
             f"来源: {len(evidence or [])} | "
@@ -550,4 +539,3 @@ __all__ = [
     "SourceReliability",
     "SituationAssessment",
 ]
-
