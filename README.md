@@ -326,7 +326,7 @@ EDP 站在巨人的肩膀上。每一层都有明确的学术出处，详见
 
 ```bibtex
 @software{edp2026,
-  author  = {{EDP Team}},
+  author  = {Omar, Nurmamat},
   title   = {{EDP: Expectation Domain Perception Method}},
   year    = {2026},
   version = {2.0.0},

@@ -249,7 +249,7 @@ that file). A BibTeX entry is also provided below:
 
 ```bibtex
 @software{edp2026,
-  author = {{EDP Team}},
+  author = {Omar, Nurmamat},
   title  = {{EDP: Expectation Domain Perception Method -- A Universal
               Domain-Aware Probabilistic Situation Awareness Framework}},
   year   = {2026},

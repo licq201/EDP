@@ -10,7 +10,7 @@ readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "EDP Team", email = "edp@example.com"}
+    {name = "Nurmamat·Omar", email = "edp@example.com"}
 ]
 keywords = [
     "probability",

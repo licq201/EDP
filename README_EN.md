@@ -357,7 +357,7 @@ If you use EDP in academic work, please cite it as described in
 
 ```bibtex
 @software{edp2026,
-  author  = {{EDP Team}},
+  author  = {Omar, Nurmamat},
   title   = {{EDP: Expectation Domain Perception Method}},
   year    = {2026},
   version = {2.0.0},
