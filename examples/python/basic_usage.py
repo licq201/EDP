@@ -1,227 +1,250 @@
-#!/usr/bin/env python3
 """
-SPAF Framework - Basic Usage Example
+EDP V2.0 基础使用示例
 
-This example demonstrates the core workflow:
-1. Calculate true probabilities from bookmaker odds
-2. Analyze probability flow between time points
-3. Calculate amplification effects
-4. Generate optimized schemes
+⚠️ 本示例仅供学术研究与教育用途，不构成任何投资建议或决策建议。
+   实际决策可能导致损失，使用者须自行承担风险。
 
-⚠️ DISCLAIMER: This is for ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.
-Sports prediction involves real financial risk. No system can guarantee profits.
+运行方式：
+    cd /workspace
+    PYTHONPATH=src/python python examples/python/basic_usage.py
 """
 
-from datetime import datetime, timedelta
-
-# Import SPAF components
+import os
 import sys
-sys.path.insert(0, '/workspace/src/python')
 
-from spaf import (
-    ProbabilityEngine,
-    FlowAnalyzer,
-    SchemeDesigner,
-    MarketType,
-    ProbabilitySnapshot,
+# 将 src/python 加入路径
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src", "python"))
+
+import importlib.util
+
+_spec = importlib.util.spec_from_file_location(
+    "edp",
+    os.path.join(os.path.dirname(__file__), "..", "..", "src", "python", "__init__.py"),
+    submodule_search_locations=[
+        os.path.join(os.path.dirname(__file__), "..", "..", "src", "python")
+    ],
+)
+edp_module = importlib.util.module_from_spec(_spec)
+sys.modules["edp"] = edp_module
+_spec.loader.exec_module(edp_module)
+
+from edp import (
+    EDP,
+    GenericDomain,
+    Outcome,
+    Evidence,
+    OnlineAggregator,
+    CalibrationEngine,
+    RiskTier,
 )
 
 
-def main():
-    """Demonstrate basic SPAF framework usage."""
+def example_1_two_outcomes():
+    """示例 1：全域问题（两结果）— 天气预测。"""
+    print("=" * 70)
+    print("示例 1：全域问题（两结果）— 明天是否下雨")
+    print("=" * 70)
 
-    print("=" * 60)
-    print("SPAF - Sports Probability Analysis Framework")
-    print("Basic Usage Example")
-    print("=" * 60)
-    print("\n⚠️  DISCLAIMER: For ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY")
-    print("   Sports prediction involves real financial risk.\n")
+    domain = GenericDomain([
+        Outcome("rain", "下雨"),
+        Outcome("no_rain", "不下雨"),
+    ])
+    edp = EDP(domain)
+    result = edp.analyze(
+        evidence=[
+            Evidence("weather_model", "model", {"probability": 0.72}, confidence=0.8),
+            Evidence("satellite", "sensor", {"probability": 0.68}, confidence=0.9),
+            Evidence("historical", "model", {"probability": 0.60}, confidence=0.5),
+        ],
+        budget=1000,
+    )
 
-    # ============================================================
-    # Step 1: Calculate True Probability
-    # ============================================================
-    print("Step 1: Calculate True Probability")
-    print("-" * 40)
+    print(f"\n摘要: {result['summary']}")
+    print(f"概率: {result['probabilities']}")
+    if result["assessment"]:
+        a = result["assessment"]
+        print(f"共识度: {a.consensus_score:.3f} | 稳定性: {a.stability.value}")
+        print(f"融合方法: {a.fusion_method} | 来源数: {a.source_count}")
+    print(f"\n风险警示:")
+    for w in result["warnings"]:
+        print(f"  {w}")
 
-    engine = ProbabilityEngine()
 
-    # Example bookmaker odds for a match
-    odds = {
-        'home': 1.50,   # Home team to win
-        'draw': 4.20,   # Draw
-        'away': 6.00,   # Away team to win
-    }
+def example_2_market_quotes():
+    """示例 2：市场报价 Shin 归一化。"""
+    print("\n" + "=" * 70)
+    print("示例 2：市场报价 Shin 归一化（三结果）")
+    print("=" * 70)
 
-    result = engine.calculate_true_probability(odds)
+    domain = GenericDomain([
+        Outcome("a", "结果A"),
+        Outcome("b", "结果B"),
+        Outcome("c", "结果C"),
+    ])
+    edp = EDP(domain)
+    # 小数报价：1.5 / 3.0 / 6.0（含市场边际）
+    result = edp.analyze(
+        raw_data={"a": 1.5, "b": 3.0, "c": 6.0},
+        budget=5000,
+        return_multipliers={"a": 1.5, "b": 3.0, "c": 6.0},
+    )
 
-    print(f"Bookmaker Odds: {odds}")
-    print(f"Overround (Margin): {result.overround:.2%}")
-    print(f"\nTrue Probabilities:")
-    for outcome, prob in result.true_probabilities.items():
-        print(f"  {outcome}: {prob:.1%}")
+    print(f"\n摘要: {result['summary']}")
+    print(f"真实概率（Shin 归一化后）:")
+    for oid, p in sorted(result["probabilities"].items(), key=lambda x: -x[1]):
+        print(f"  {oid}: {p:.3f} ({p*100:.1f}%)")
 
-    most_likely = result.get_most_likely_outcome()
-    print(f"\nMost Likely Outcome: {most_likely[0]} ({most_likely[1]:.1%})")
+    if result["allocation"].legs:
+        print(f"\n分配方案（quarter-Kelly，仅供研究）:")
+        for leg in result["allocation"].get_top_allocations():
+            print(f"  {leg.outcome_id}: {leg.allocated_amount:.2f} "
+                  f"({leg.allocation_fraction*100:.1f}%)")
+        print(f"  未分配: {result['allocation'].unallocated_amount:.2f}")
 
-    # ============================================================
-    # Step 2: Analyze Probability Flow
-    # ============================================================
-    print("\n" + "=" * 60)
-    print("Step 2: Analyze Probability Flow")
-    print("-" * 40)
 
-    # Create initial and latest probability snapshots
-    now = datetime.now()
+def example_3_online_aggregation():
+    """示例 3：在线专家聚合。"""
+    print("\n" + "=" * 70)
+    print("示例 3：在线专家聚合（ML-Poly 算法）")
+    print("=" * 70)
 
-    initial_snapshot = ProbabilitySnapshot(
-        timestamp=now - timedelta(hours=24),
-        probabilities={
-            'home': 0.65,  # 65% implied probability
-            'draw': 0.24,
-            'away': 0.16,
+    agg = OnlineAggregator({"algorithm": "mlpoly"})
+    agg.initialize(["model_a", "model_b", "model_c"])
+
+    # 模拟 50 个时间步：model_a 总是最准
+    import random
+    random.seed(42)
+    for t in range(50):
+        actual = 0.6 + 0.01 * t  # 趋势上升
+        preds = {
+            "model_a": actual + random.gauss(0, 0.02),  # 最准
+            "model_b": 0.5,                              # 恒定，不准
+            "model_c": actual + random.gauss(0, 0.1),    # 噪声大
+        }
+        agg.predict(preds)
+        agg.update(preds, actual)
+
+    weights = agg.get_weights()
+    print(f"\n最终权重（model_a 应最高）:")
+    for sid, w in sorted(weights.items(), key=lambda x: -x[1]):
+        print(f"  {sid}: {w:.3f}")
+
+    perf = agg.get_performance()
+    print(f"\n各来源历史表现:")
+    for sid, p in perf.items():
+        print(f"  {sid}: avg_loss={p['avg_loss']:.4f}, weight={p['weight']:.3f}")
+
+
+def example_4_calibration():
+    """示例 4：预测校准与 Brier 分解。"""
+    print("\n" + "=" * 70)
+    print("示例 4：预测校准（Brier 分解）")
+    print("=" * 70)
+
+    calib = CalibrationEngine()
+
+    # 模拟 30 次预测：预测概率 0.7 时，实际发生 70% 的情况
+    import random
+    random.seed(123)
+    for i in range(30):
+        pred_prob = 0.7
+        actual = "a" if random.random() < pred_prob else "b"
+        calib.evaluate({"a": pred_prob, "b": 1 - pred_prob}, actual)
+
+    perf = calib.long_term_performance()
+    print(f"\n长期表现:")
+    print(f"  预测总数: {perf['total_predictions']}")
+    print(f"  Top-1 准确率: {perf['top1_accuracy']:.3f}")
+    print(f"  平均 Brier: {perf['avg_brier']:.4f}")
+
+    decomp = perf["brier_decomposition"]
+    print(f"\nBrier 分解 (BS = REL − RES + UNC):")
+    print(f"  BS  (Brier 分数):     {decomp['brier_score']:.4f}")
+    print(f"  REL (可靠性，越小越好): {decomp['reliability']:.4f}")
+    print(f"  RES (分辨力，越大越好): {decomp['resolution']:.4f}")
+    print(f"  UNC (不确定性):        {decomp['uncertainty']:.4f}")
+
+    curve = calib.calibration_curve(n_bins=5)
+    print(f"\n校准曲线（预测概率 vs 实际频率）:")
+    print(f"  {'预测概率':>10} | {'实际频率':>10} | {'样本数':>6}")
+    for pred, obs, count in curve:
+        print(f"  {pred:>10.3f} | {obs:>10.3f} | {count:>6d}")
+
+
+def example_5_custom_domain():
+    """示例 5：自定义域适配器。"""
+    print("\n" + "=" * 70)
+    print("示例 5：自定义域适配器（五结果近似全域）")
+    print("=" * 70)
+
+    from edp import DomainAdapter, EventGraph, Quote
+
+    class PriceDirectionDomain(DomainAdapter):
+        """价格方向预测域：大跌/小跌/持平/小涨/大涨。"""
+
+        def get_outcomes(self, context=None):
+            return [
+                Outcome("strong_down", "大跌"),
+                Outcome("down", "小跌"),
+                Outcome("flat", "持平"),
+                Outcome("up", "小涨"),
+                Outcome("strong_up", "大涨"),
+            ]
+
+        def build_event_graph(self, outcomes):
+            # 有序链：大跌 ↔ 小跌 ↔ 持平 ↔ 小涨 ↔ 大涨
+            return EventGraph.chain([o.id for o in outcomes])
+
+        def normalize_signals(self, raw_data):
+            # raw_data: {outcome_id: probability}
+            quotes = []
+            for oid, val in raw_data.items():
+                quotes.append(Quote(outcome_id=oid, value=val, signal_type="probability"))
+            return quotes
+
+    domain = PriceDirectionDomain()
+    edp = EDP(domain)
+    result = edp.analyze(
+        evidence=[
+            Evidence("flow_1", "market", {"probability": 0.72}, confidence=0.85),
+            Evidence("flow_2", "market", {"probability": 0.68}, confidence=0.80),
+            Evidence("sentiment", "nlp", {"direction": "upward"}, confidence=0.60),
+            Evidence("model", "model", {"probability": 0.65}, confidence=0.70),
+        ],
+        budget=10000,
+        return_multipliers={
+            "strong_up": 5.0, "up": 2.5, "flat": 1.8,
+            "down": 3.0, "strong_down": 8.0,
         },
-        source="bookmaker",
-        market_type=MarketType.MATCH_RESULT,
+        risk_tier=RiskTier.CONSERVATIVE,
     )
 
-    latest_snapshot = ProbabilitySnapshot(
-        timestamp=now,
-        probabilities={
-            'home': 0.68,  # Increased to 68%
-            'draw': 0.22,
-            'away': 0.14,
-        },
-        source="bookmaker",
-        market_type=MarketType.MATCH_RESULT,
-    )
+    print(f"\n摘要: {result['summary']}")
+    print(f"\n各结果概率:")
+    for oid, p in sorted(result["probabilities"].items(), key=lambda x: -x[1]):
+        print(f"  {oid:12s}: {p:.3f}")
 
-    flow_report = engine.analyze_flow(initial_snapshot, latest_snapshot)
-
-    print(f"Initial Snapshot: {initial_snapshot.timestamp}")
-    print(f"Latest Snapshot: {latest_snapshot.timestamp}")
-    print(f"\nProbability Flow Analysis:")
-
-    for flow in flow_report.flows:
-        direction_symbol = "↑" if flow.flow_pp > 0 else "↓" if flow.flow_pp < 0 else "→"
-        print(
-            f"  {flow.outcome}: {flow.initial_prob:.1%} → {flow.latest_prob:.1%} "
-            f"({direction_symbol} {flow.flow_pp:+.1f}pp) [{flow.significance}]"
-        )
-
-    positive_flows = flow_report.get_positive_flows()
-    print(f"\nPositive Flow Outcomes: {[f.outcome for f in positive_flows]}")
-
-    # ============================================================
-    # Step 3: Calculate Amplification Effect
-    # ============================================================
-    print("\n" + "=" * 60)
-    print("Step 3: Calculate Amplification Effect")
-    print("-" * 40)
-
-    analyzer = FlowAnalyzer()
-
-    # Define gradient map for correct score market
-    # Adjacent outcomes in same direction
-    gradient_map = {
-        'home_1_0': ['home_2_0', 'home_2_1', 'home_3_0'],
-        'home_2_0': ['home_1_0', 'home_3_0', 'home_2_1'],
-        'home_2_1': ['home_1_0', 'home_2_0', 'home_3_1'],
-        'home_3_0': ['home_2_0', 'home_3_1', 'home_4_0'],
-    }
-
-    # Current probabilities for correct score market
-    outcome_probabilities = {
-        'home_1_0': 0.15,
-        'home_2_0': 0.12,
-        'home_2_1': 0.10,
-        'home_3_0': 0.08,
-        'home_3_1': 0.06,
-        'home_4_0': 0.04,
-    }
-
-    # Domain confidence from situational awareness
-    # Higher confidence when intelligence supports the flow
-    domain_confidence = {
-        'home_1_0': 0.8,
-        'home_2_0': 0.9,  # Strong team + high scoring
-        'home_2_1': 0.7,
-        'home_3_0': 0.85,
-    }
-
-    amp_report = analyzer.calculate_amplification(
-        flow_report=flow_report,
-        gradient_map=gradient_map,
-        outcome_probabilities=outcome_probabilities,
-        domain_confidence=domain_confidence,
-    )
-
-    print("Amplification Analysis Results:")
-    for amp in amp_report.amplifications:
-        if amp.level.value != "none":
-            print(
-                f"  {amp.outcome}: Score={amp.amplification_score:.2f} "
-                f"(Base={amp.base_flow_pp:.1f}pp, "
-                f"Consistency={amp.directional_consistency:.2f}, "
-                f"Position={amp.gradient_position:.2f}) "
-                f"[{amp.level.value}]"
-            )
-
-    high_amp = amp_report.get_high_amplification()
-    print(f"\nHigh Amplification Outcomes: {[a.outcome for a in high_amp]}")
-
-    # ============================================================
-    # Step 4: Generate Schemes
-    # ============================================================
-    print("\n" + "=" * 60)
-    print("Step 4: Generate Optimized Schemes")
-    print("-" * 40)
-
-    designer = SchemeDesigner()
-
-    match_data = {
-        'match_id': 'example_match_001',
-        'home_team': 'Team A',
-        'away_team': 'Team B',
-    }
-
-    bundle = designer.generate_schemes(
-        amplification_report=amp_report,
-        budget=100,
-        match_data=match_data,
-        max_schemes=5,
-    )
-
-    print(f"Total Budget: ¥{bundle.total_budget}")
-    print(f"Allocated Budget: ¥{bundle.allocated_budget:.2f}")
-    print(f"Number of Schemes: {len(bundle.schemes)}")
-
-    for i, scheme in enumerate(bundle.schemes, 1):
-        print(f"\n  Scheme {i}:")
-        print(f"    Type: {scheme.parlay_type}")
-        print(f"    Risk Level: {scheme.risk_level.value}")
-        print(f"    Legs: {[leg.selection for leg in scheme.legs]}")
-        print(f"    Combined Odds: {scheme.combined_odds:.2f}x")
-        print(f"    Stake: ¥{scheme.stake_per_combination:.2f}")
-        print(f"    Total Cost: ¥{scheme.total_cost:.2f}")
-        print(f"    Potential Return: ¥{scheme.potential_return:.2f}")
-
-    # ============================================================
-    # Summary
-    # ============================================================
-    print("\n" + "=" * 60)
-    print("Analysis Complete")
-    print("=" * 60)
-    print("\nKey Findings:")
-    print(f"  • Most likely outcome: {most_likely[0]} ({most_likely[1]:.1%})")
-    print(f"  • Bookmaker margin: {result.overround:.2%}")
-    print(f"  • Positive flow outcomes: {len(positive_flows)}")
-    print(f"  • High amplification signals: {len(high_amp)}")
-    print(f"  • Generated schemes: {len(bundle.schemes)}")
-
-    print("\n⚠️  Remember: This is for EDUCATIONAL PURPOSES ONLY.")
-    print("   No system can guarantee profits in sports prediction.")
-    print("   Always gamble responsibly.\n")
+    if result["flow"]:
+        print(f"\n流向分析:")
+        for f in result["flow"].flows:
+            print(f"  {f.outcome:12s}: {f.flow_pp:+.2f}pp ({f.direction.value})")
 
 
 if __name__ == "__main__":
-    main()
+    print("EDP V2.0 — 期望域感知方法（Expectation Domain Perception Method）")
+    print("通用全域概率态势感知框架")
+    print()
+    print("⚠️  仅供学术研究与教育用途，不构成任何投资或决策建议。")
+    print("    实际决策可能导致损失，使用者须自行承担风险。")
+    print()
+
+    example_1_two_outcomes()
+    example_2_market_quotes()
+    example_3_online_aggregation()
+    example_4_calibration()
+    example_5_custom_domain()
+
+    print("\n" + "=" * 70)
+    print("所有示例运行完毕。")
+    print("EDP V2.0 仅供学术研究，不构成任何决策建议。")
+    print("=" * 70)

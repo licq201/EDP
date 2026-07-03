@@ -1,581 +1,364 @@
 """
-EDP - Expectation Domain Perception Method
-Multi-Source Intelligence Fusion and Domain Awareness Engine.
+EDP - 期望域感知方法 (Expectation Domain Perception Method) V2.0
+全域感知引擎 (Layer 4: Domain Awareness)
 
-This module implements the multi-source intelligence integration system,
-providing cross-validation of information sources and situational awareness.
+本模块实现多源情报融合，将来自不同信息来源（市场、模型、专家、NLP、
+传感器、LLM、API）的证据融合为统一的概率态势评估。
 
-Core Theoretical Foundations:
+融合方法：
+    - linear:   线性池（加权平均）
+    - log_odds: 对数优比池
+    - bayesian: 序贯贝叶斯更新
+    - hybrid:   三者均值
 
-1. Multi-Source Intelligence Fusion (Endsley, 1988, 2015)
-   Perception of elements in the environment within a volume of time
-   and space, the comprehension of their meaning, and the projection
-   of their status in the near future.
+源权重计算：
+    w_i = reliability_i × confidence_i × 2^{−Δt/t½}
 
-2. Bayesian Evidence Accumulation (Pearl, 1988)
-   Sequential updating of posterior probabilities from independent
-   evidence sources.
+共识分析：
+    Consensus = 1 − min(σ/0.5, 1.0)
+    σ 越小 → 共识越高
 
-3. Dempster-Shafer Evidence Theory (Shafer, 1976)
-   Representation and combination of evidence from multiple sources
-   with uncertainty and ignorance.
+异常检测：
+    Z-score > 阈值 → 标记为异常
 
-4. Information Cascade Detection (Bikhchandani et al., 1992)
-   Identification of correlated information flows that may indicate
-   convergence or herding behavior.
-
-5. Consensus Dynamics (Degroot, 1974)
-   Weighted averaging of source opinions with credibility weighting.
-
-Information Fusion Architecture:
-    ┌──────────────────────────────────────────────────────────┐
-    │          Multi-Source Intelligence Intake                │
-    │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐    │
-    │  │ Source 1 │ │ Source 2 │ │ Source 3 │ │ Source N │    │
-    │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘    │
-    │       ▼            ▼            ▼            ▼          │
-    │       └────────────┴────────────┴────────────┘          │
-    │                          ▼                               │
-    │          ┌──────────────────────────────────┐           │
-    │          │     Evidence Preprocessing       │           │
-    │          │  • Normalization                 │           │
-    │          │  • Source Credibility Estimation │           │
-    │          │  • Temporal Alignment            │           │
-    │          └────────────────┬─────────────────┘           │
-    │                           ▼                              │
-    │          ┌──────────────────────────────────┐           │
-    │          │     Evidence Combination         │           │
-    │          │  • Bayesian Evidence Fusion      │           │
-    │          │  • Consensus Dynamics            │           │
-    │          │  • Cross-Source Validation       │           │
-    │          └────────────────┬─────────────────┘           │
-    │                           ▼                              │
-    │          ┌──────────────────────────────────┐           │
-    │          │   Situation Awareness Output     │           │
-    │          │  • Confidence Assessment         │           │
-    │          │  • Anomaly Detection             │           │
-    │          │  • Stability Index               │           │
-    │          └──────────────────────────────────┘           │
-    └──────────────────────────────────────────────────────────┘
-
-References:
-    Endsley, M.R. (1988). "Design and Evaluation for Situation
-    Awareness Enhancement." Proc. Human Factors Society, 32(1), 97-101.
-
-    Pearl, J. (1988). "Probabilistic Reasoning in Intelligent Systems."
-    Morgan Kaufmann.
-
-    Shafer, G. (1976). "A Mathematical Theory of Evidence."
-    Princeton University Press.
-
-    Bikhchandani, S., Hirshleifer, D., & Welch, I. (1992).
-    "A Theory of Fads, Fashion, Custom, and Cultural Change
-    as Information Cascades." JPE, 100(5), 992-1026.
-
+理论基础：
+    Genest, C. & Zidek, J.V. (1986). "Combining Probability Distributions."
+        Statistical Science, 1(1), 114-135.
     DeGroot, M.H. (1974). "Reaching a Consensus."
-    JASA, 69(345), 118-121.
+        Journal of the American Statistical Association, 69(345), 118-121.
+    Endsley, M.R. (1988). "Design and Evaluation for Situation Awareness."
+        Proceedings of the Human Factors Society Annual Meeting.
 
-    Dempster, A.P. (1968). "A Generalization of Bayesian Inference."
-    JRSS B, 30(2), 205-247.
-
-⚠️ ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY
+⚠️ 风险警示 ⚠️
+    本模块仅供学术研究与教育用途。融合概率为统计推断产物，
+    不构成任何投资建议、决策建议或交易指导。使用者须自行承担
+    一切决策风险。
 """
 
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
 
 class EvidenceType(Enum):
-    """
-    Classification of evidence sources.
+    """证据来源类型。"""
 
-    Each type corresponds to a different channel of information intake,
-    which may have different credibility and reliability characteristics.
-    """
-
-    STATISTICAL = "statistical"  # Derived from statistical models
-    ANALYTICAL = "analytical"  # From analytical inference engines
-    OBSERVATIONAL = "observational"  # Direct observational data
-    HISTORICAL = "historical"  # Historical precedent analysis
-    EXPERT = "expert"  # Expert judgment / domain knowledge
-    COMPOSITE = "composite"  # Aggregated from multiple sources
+    MARKET = "market"
+    MODEL = "model"
+    EXPERT = "expert"
+    NLP = "nlp"
+    SENSOR = "sensor"
+    LLM = "llm"
+    API = "api"
+    UNKNOWN = "unknown"
 
 
 class SourceReliability(Enum):
-    """
-    Source reliability classification (adapted from NATO STANAG 2511).
+    """源可靠性等级（STANAG 2511 改编）。"""
 
-    Used for credibility-weighted evidence fusion.
-    """
+    A = (1.00, "完全可靠")
+    B = (0.80, "通常可靠")
+    C = (0.60, "相当可靠")
+    D = (0.40, "通常不可靠")
+    E = (0.20, "不可靠")
+    F = (0.50, "无法判断")
 
-    A = ("completely_reliable", 1.00)  # Completely reliable
-    B = ("usually_reliable", 0.80)  # Usually reliable
-    C = ("fairly_reliable", 0.60)  # Fairly reliable
-    D = ("not_usually_reliable", 0.40)  # Not usually reliable
-    E = ("unreliable", 0.20)  # Unreliable
-    F = ("cannot_be_judged", 0.50)  # Reliability cannot be judged
-
-    def __init__(self, _label: str, weight: float):
+    def __init__(self, weight: float, description: str):
         self.weight = weight
+        self.description = description
 
 
-class StabilityStatus(Enum):
-    """Status of situation stability based on evidence convergence."""
+class StabilityLevel(Enum):
+    """态势稳定性分类。"""
 
-    STABLE = "stable"  # Evidence consensus, low variance
-    UNSTABLE = "unstable"  # Evidence disagreement, high variance
-    EMERGING = "emerging"  # Evidence converging, trend forming
-    AMBIGUOUS = "ambiguous"  # Insufficient / conflicting evidence
-    ANOMALOUS = "anomalous"  # Evidence contradicts historical patterns
+    STABLE = "stable"            # 高共识，低异常
+    UNSTABLE = "unstable"        # 低共识，无异常
+    EMERGING = "emerging"        # 中共识，强动量
+    AMBIGUOUS = "ambiguous"      # 中共识，高分歧
+    ANOMALOUS = "anomalous"      # 存在异常
 
 
 @dataclass
 class EvidenceSource:
     """
-    An individual evidence source contributing to the fusion process.
-
-    Represents a single channel of information with metadata about:
-    - Source identity and reliability
-    - Evidence content (probability estimates, observations)
-    - Temporal information
-    - Confidence / variance metrics
+    证据来源（标准化）。
 
     Attributes:
-        source_id: Unique identifier for this source
-        source_type: Type classification of evidence
-        reliability: Rated reliability of this source
-        timestamp: Time evidence was collected
-        content: Core evidence content (dict with 'probability' key recommended)
-        confidence: Self-reported confidence (0-1) from the source
-        meta: Additional metadata (tags, context, etc.)
+        source_id: 来源唯一标识
+        evidence_type: 来源类型
+        reliability: 可靠性 [0,1]
+        timestamp: 证据时间戳
+        data: 证据数据（至少含 "probability"）
+        confidence: 自报信心 [0,1]
     """
 
     source_id: str
-    source_type: EvidenceType
+    evidence_type: EvidenceType
     reliability: SourceReliability
     timestamp: datetime
-    content: dict[str, Any]
+    data: dict[str, Any]
     confidence: float = 0.7
-    meta: dict[str, Any] = field(default_factory=dict)
 
-    def evidence_probability(self) -> float:
-        """Extract probability estimate from content (0.0-1.0)."""
-        p = self.content.get("probability", self.content.get("value", 0.0))
-        return max(0.0, min(float(p), 1.0))
+    @property
+    def probability(self) -> float:
+        p = self.data.get("probability")
+        if p is None:
+            return 0.5
+        return max(0.0, min(1.0, float(p)))
 
-    def weighted_probability(self) -> float:
-        """
-        Probability weighted by source credibility.
-
-        Weight = reliability * confidence
-
-        Returns:
-            Weighted probability estimate
-        """
-        return self.evidence_probability() * self.reliability.weight * self.confidence
+    @property
+    def reliability_weight(self) -> float:
+        return self.reliability.weight
 
 
 @dataclass
 class SituationAssessment:
-    """
-    Result of multi-source evidence fusion.
-
-    Provides a comprehensive situational assessment including:
-    - Aggregated probability estimate
-    - Confidence / uncertainty quantification
-    - Evidence convergence metrics
-    - Anomaly detection flags
-    - Risk / stability indicators
-
-    Attributes:
-        aggregate_probability: Fused probability from all sources
-        confidence: Overall confidence (0-1) in the assessment
-        source_count: Number of contributing sources
-        consensus_score: Degree of agreement across sources (0-1)
-        stability_status: Stability classification
-        contributing_sources: List of source IDs
-        variance: Variance across source estimates
-        anomalies: List of detected anomalies
-        generated_at: Timestamp of assessment
-    """
+    """多源融合态势评估结果。"""
 
     aggregate_probability: float
-    confidence: float
-    source_count: int
+    source_weights: dict[str, float]
     consensus_score: float
-    stability_status: StabilityStatus
-    contributing_sources: list[str]
-    variance: float = 0.0
-    anomalies: list[dict[str, Any]] = field(default_factory=list)
-    generated_at: datetime = field(default_factory=datetime.now)
+    stability: StabilityLevel
+    anomaly_flags: list[str] = field(default_factory=list)
+    source_count: int = 0
+    fusion_method: str = "hybrid"
+    confidence: float = 0.5
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def summary(self) -> str:
-        """Human-readable summary of the assessment."""
-        return (
-            f"Situation Assessment: p={self.aggregate_probability:.3f}, "
-            f"conf={self.confidence:.2f}, sources={self.source_count}, "
-            f"consensus={self.consensus_score:.2f}, status={self.stability_status.value}"
-        )
+    @property
+    def is_consensus(self) -> bool:
+        return self.consensus_score > 0.7
+
+    @property
+    def has_anomaly(self) -> bool:
+        return len(self.anomaly_flags) > 0
+
+    def get_summary(self) -> dict[str, Any]:
+        return {
+            "aggregate_probability": self.aggregate_probability,
+            "consensus_score": self.consensus_score,
+            "stability": self.stability.value,
+            "source_count": self.source_count,
+            "fusion_method": self.fusion_method,
+            "confidence": self.confidence,
+            "anomaly_flags": self.anomaly_flags,
+        }
 
 
 class DomainAwarenessEngine:
     """
-    Multi-source intelligence fusion and domain awareness engine.
+    全域感知引擎 (L4)。
 
-    Implements the complete evidence fusion pipeline:
-    1. Evidence intake and normalization
-    2. Source credibility estimation
-    3. Weighted consensus fusion (DeGroot-style)
-    4. Bayesian evidence accumulation
-    5. Evidence convergence / consensus analysis
-    6. Anomaly and cascade detection
-    7. Situation assessment output
+    融合流程：
+        1. 源预处理：reliability × confidence × temporal_decay → 归一化权重
+        2. 融合（可选模式）：
+           - linear:   加权平均
+           - log_odds: 对数优比池
+           - bayesian: 序贯贝叶斯
+           - hybrid:   三者均值
+        3. 共识分析：σ 越小 → 共识越高
+        4. 异常检测：Z-score > 阈值 → 标记
+        5. 稳定性分类
+        6. 置信度校准
 
-    The engine uses a hybrid approach combining:
-    - Weighted linear opinion pooling (Cooke, 1991)
-    - Bayesian log-odds pooling for sequential updates
-    - Variance-based consensus scoring
-    - Temporal decay for recency-weighted processing
-
-    References:
-        Cooke, R.M. (1991). "Experts in Uncertainty." Oxford University Press.
-        Genest, C. & Zidek, J.V. (1986). "Combining Probability Distributions."
-        Statistical Science, 1(1), 114-148.
-
-    Example:
-        >>> engine = DomainAwarenessEngine()
-        >>> sources = [EvidenceSource(...), EvidenceSource(...)]
-        >>> assessment = engine.assess_situation(sources)
+    ⚠️ 本引擎仅供学术研究，输出不构成任何决策建议。
     """
 
-    # Configuration
-    MIN_SOURCES_FOR_CONSENSUS = 2
-    TIME_DECAY_HALF_LIFE_HOURS = 24  # Temporal decay half-life
-    ANOMALY_THRESHOLD_STD = 2.0  # Z-score threshold for anomaly detection
-    CONSENSUS_HIGH = 0.7  # Above this = stable
-    CONSENSUS_LOW = 0.3  # Below this = ambiguous
-    CASCADE_DETECTION_WINDOW = 5  # Sources to check for cascade effect
+    TIME_DECAY_HOURS = 24.0
+    CONSENSUS_HIGH = 0.7
+    CONSENSUS_LOW = 0.3
+    ANOMALY_THRESHOLD = 2.0
 
     def __init__(self, config: dict[str, Any] | None = None):
-        """
-        Initialize the domain awareness engine.
-
-        Args:
-            config: Optional configuration with keys:
-                   time_decay_hours, consensus_high, consensus_low,
-                   anomaly_threshold
-        """
         self.config = config or {}
-        self.time_decay_half_life = timedelta(
-            hours=self.config.get("time_decay_hours", self.TIME_DECAY_HALF_LIFE_HOURS)
+        self.time_decay_hours = self.config.get(
+            "time_decay_hours", self.TIME_DECAY_HOURS
         )
         self.consensus_high = self.config.get("consensus_high", self.CONSENSUS_HIGH)
         self.consensus_low = self.config.get("consensus_low", self.CONSENSUS_LOW)
         self.anomaly_threshold = self.config.get(
-            "anomaly_threshold", self.ANOMALY_THRESHOLD_STD
+            "anomaly_threshold", self.ANOMALY_THRESHOLD
         )
 
-    # ─── Evidence Preprocessing ────────────────────────────────────────
+    # ------------------------------------------------------------------
+    # 源权重计算
+    # ------------------------------------------------------------------
 
-    def compute_source_weight(self, source: EvidenceSource, now: datetime | None = None) -> float:
+    def calculate_source_weight(
+        self, source: EvidenceSource, now: datetime | None = None
+    ) -> float:
         """
-        Compute the aggregate credibility weight for a source.
-
-        Weight = reliability_weight * confidence * temporal_decay
-
-        Temporal decay uses exponential half-life model:
-            decay = 2^(-Δt / half_life)
-
-        Args:
-            source: The evidence source to weight
-            now: Reference time (defaults to current time)
-
-        Returns:
-            Aggregate weight (0.0-1.0 range after final normalization)
+        计算源权重：
+            w_i = reliability_i × confidence_i × 2^{−Δt/t½}
         """
         now = now or datetime.now()
+        delta_hours = max((now - source.timestamp).total_seconds() / 3600.0, 0.0)
+        temporal_decay = 2.0 ** (-delta_hours / self.time_decay_hours)
+        return source.reliability_weight * source.confidence * temporal_decay
 
-        # Temporal decay: older sources get less weight
-        age = (now - source.timestamp).total_seconds() / 3600.0  # hours
-        decay = math.pow(2.0, -age / (self.time_decay_half_life.total_seconds() / 3600.0))
+    def _normalize_weights(self, weights: dict[str, float]) -> dict[str, float]:
+        total = sum(weights.values())
+        if total <= 0:
+            n = len(weights)
+            return {k: 1.0 / n for k in weights} if n > 0 else {}
+        return {k: v / total for k, v in weights.items()}
 
-        # Combined weight: reliability × confidence × decay
-        return source.reliability.weight * source.confidence * decay
+    # ------------------------------------------------------------------
+    # 融合方法
+    # ------------------------------------------------------------------
 
-    def normalize_sources(
-        self, sources: list[EvidenceSource]
-    ) -> tuple[list[EvidenceSource], list[float]]:
-        """
-        Normalize source weights to sum to 1.0 (DeGroot consensus preprocessing).
+    def _fuse_linear(
+        self, sources: list[EvidenceSource], weights: dict[str, float]
+    ) -> float:
+        """线性池：p = Σ(w_i × p_i)。"""
+        return sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
 
-        Args:
-            sources: List of evidence sources
+    def _fuse_log_odds(
+        self, sources: list[EvidenceSource], weights: dict[str, float]
+    ) -> float:
+        """对数优比池：logit(p) = Σ(w_i × logit(p_i))。"""
+        eps = 1e-6
+        logit_sum = 0.0
+        for s in sources:
+            p = max(eps, min(1 - eps, s.probability))
+            logit = math.log(p / (1 - p))
+            logit_sum += weights.get(s.source_id, 0.0) * logit
+        # 数值稳定 sigmoid
+        if logit_sum >= 0:
+            ez = math.exp(-logit_sum)
+            return 1.0 / (1.0 + ez)
+        ez = math.exp(logit_sum)
+        return ez / (1.0 + ez)
 
-        Returns:
-            Tuple of (sorted_sources_by_weight, normalized_weights)
-        """
-        now = datetime.now()
-
-        # Compute raw weights
-        weights = [self.compute_source_weight(s, now) for s in sources]
-
-        # Normalize weights
-        total = sum(weights)
-        if total > 0:
-            normalized_weights = [w / total for w in weights]
-        else:
-            # Equal weights if all are zero
-            n = max(len(sources), 1)
-            normalized_weights = [1.0 / n] * len(sources)
-
-        return sources, normalized_weights
-
-    # ─── Evidence Fusion Methods ───────────────────────────────────────
-
-    def linear_pool_fusion(
-        self, sources: list[EvidenceSource], weights: list[float]
+    def _fuse_bayesian(
+        self,
+        sources: list[EvidenceSource],
+        weights: dict[str, float],
+        prior_probability: float,
     ) -> float:
         """
-        Linear opinion pooling (weighted average).
+        序贯贝叶斯：
+            log-odds_posterior = log-odds_prior + Σ[logit(p_i) − logit(p_prior)]
+        """
+        eps = 1e-6
+        prior = max(eps, min(1 - eps, prior_probability))
+        prior_logodds = math.log(prior / (1 - prior))
 
-        p_fused = Σ(w_i * p_i), where Σ(w_i) = 1
+        log_odds = prior_logodds
+        for s in sources:
+            p = max(eps, min(1 - eps, s.probability))
+            source_logodds = math.log(p / (1 - p))
+            prior_lo = math.log(prior / (1 - prior))
+            log_odds += weights.get(s.source_id, 0.0) * (source_logodds - prior_lo)
 
-        This is the standard weighted opinion pool (Cooke, 1991).
+        if log_odds >= 0:
+            ez = math.exp(-log_odds)
+            return 1.0 / (1.0 + ez)
+        ez = math.exp(log_odds)
+        return ez / (1.0 + ez)
 
-        Args:
-            sources: Evidence sources with probability estimates
-            weights: Normalized weights (sum to 1)
+    def _fuse_hybrid(
+        self,
+        sources: list[EvidenceSource],
+        weights: dict[str, float],
+        prior_probability: float,
+    ) -> float:
+        """混合：三者均值。"""
+        p_linear = self._fuse_linear(sources, weights)
+        p_logodds = self._fuse_log_odds(sources, weights)
+        p_bayesian = self._fuse_bayesian(sources, weights, prior_probability)
+        return (p_linear + p_logodds + p_bayesian) / 3.0
 
-        Returns:
-            Fused probability estimate (0-1)
+    # ------------------------------------------------------------------
+    # 共识与异常分析
+    # ------------------------------------------------------------------
+
+    def calculate_consensus(
+        self, sources: list[EvidenceSource], weights: dict[str, float]
+    ) -> float:
+        """
+        共识评分：Consensus = 1 − min(σ/0.5, 1.0)
         """
         if not sources:
-            return 0.5  # Maximum uncertainty
-
-        fused = sum(w * s.evidence_probability() for s, w in zip(sources, weights))
-        return max(0.0, min(fused, 1.0))
-
-    def log_odds_pool_fusion(
-        self, sources: list[EvidenceSource], weights: list[float]
-    ) -> float:
-        """
-        Log-odds opinion pooling (Bayesian-style evidence combination).
-
-        Transform to log-odds space, weight, and transform back:
-            logit(p) = log(p / (1-p))
-            logit_fused = Σ(w_i * logit(p_i))
-            p_fused = sigmoid(logit_fused)
-
-        Log-odds pooling is better for extreme probabilities and
-        has stronger Bayesian justification (Genest & Zidek, 1986).
-
-        Args:
-            sources: Evidence sources with probability estimates
-            weights: Normalized weights (sum to 1)
-
-        Returns:
-            Fused probability estimate (0-1)
-        """
-        if not sources:
-            return 0.5
-
-        # Clip to avoid log(0) or division by zero
-        def safe_logit(p: float) -> float:
-            p = max(1e-6, min(1 - 1e-6, p))
-            return math.log(p / (1 - p))
-
-        logits = [safe_logit(s.evidence_probability()) for s in sources]
-        fused_logit = sum(w * l for w, l in zip(weights, logits))
-
-        # Inverse logit (sigmoid)
-        exp_val = math.exp(-fused_logit)
-        return 1.0 / (1.0 + exp_val)
-
-    def bayesian_evidence_accumulation(
-        self, sources: list[EvidenceSource], prior: float = 0.5
-    ) -> float:
-        """
-        Sequential Bayesian evidence accumulation.
-
-        Treats each source as an independent evidence-bearing observation
-        and updates sequentially (Pearl, 1988):
-
-            posterior_odds = prior_odds * Π(likelihood_ratio_i)
-
-        where likelihood_ratio = p_i / (1 - p_i) for each source.
-
-        This corresponds to log-odds pooling with uniform weights but
-        includes explicit prior handling.
-
-        Args:
-            sources: List of evidence sources
-            prior: Prior probability (default 0.5 = uninformative)
-
-        Returns:
-            Posterior probability after accumulating all evidence
-        """
-        if not sources:
-            return prior
-
-        # Prior log-odds
-        prior_logit = math.log(prior / max(1 - prior, 1e-6))
-
-        # Accumulate evidence in log-odds space
-        evidence_logit = 0.0
-        n_effective = 0
-
-        for source in sources:
-            p = max(1e-6, min(1 - 1e-6, source.evidence_probability()))
-            weight = self.compute_source_weight(source)
-            if weight > 0:
-                evidence_logit += weight * math.log(p / (1 - p))
-                n_effective += 1
-
-        if n_effective == 0:
-            return prior
-
-        # Normalize by effective source count (scaled evidence)
-        # This prevents explosion from many weak sources
-        normalized_evidence = evidence_logit  # Weighted sum already scaled
-
-        # Posterior = prior + evidence
-        posterior_logit = prior_logit + normalized_evidence
-
-        # Transform back to probability
-        return 1.0 / (1.0 + math.exp(-posterior_logit))
-
-    # ─── Consensus Analysis ────────────────────────────────────────────
-
-    def compute_consensus_score(self, sources: list[EvidenceSource]) -> float:
-        """
-        Compute evidence consensus / agreement score.
-
-        Measures degree of agreement across sources using:
-        1. Variance of probability estimates (lower = more consensus)
-        2. Pairwise agreement averaged
-
-        Score = 1 - min(σ / σ_max, 1.0)
-        where σ_max = 0.5 (maximum theoretical standard deviation for uniform {0,1})
-
-        Args:
-            sources: List of evidence sources
-
-        Returns:
-            Consensus score (0-1, higher = better agreement)
-        """
-        if len(sources) < 2:
-            return 1.0  # Single source = perfect consensus (trivially)
-
-        values = [s.evidence_probability() for s in sources]
-        mean = sum(values) / len(values)
-        variance = sum((v - mean) ** 2 for v in values) / len(values)
-        std_dev = math.sqrt(variance)
-
-        # Normalize: max possible std for binary is 0.5 (Bernoulli p=0.5)
-        sigma_max = 0.5
-        normalized_disagreement = min(std_dev / sigma_max, 1.0)
-
-        return 1.0 - normalized_disagreement
-
-    def compute_effective_number_of_sources(
-        self, weights: list[float]
-    ) -> float:
-        """
-        Effective number of independent sources (Herfindahl-Hirschman index).
-
-        n_effective = 1 / Σ(w_i²)
-
-        Measures true diversity of information sources. If one source has
-        w=1 and others w=0, n_effective=1 (only one source contributing).
-
-        Args:
-            weights: Normalized weights (sum to 1)
-
-        Returns:
-            Effective number of sources (>=1)
-        """
-        if not weights:
             return 0.0
-        hhi = sum(w * w for w in weights)
-        if hhi == 0:
-            return len(weights)
-        return 1.0 / hhi
-
-    # ─── Anomaly Detection ─────────────────────────────────────────────
+        weighted_mean = sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
+        variance = sum(
+            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2
+            for s in sources
+        )
+        std = math.sqrt(max(variance, 0.0))
+        return max(0.0, 1.0 - min(std / 0.5, 1.0))
 
     def detect_anomalies(
-        self, sources: list[EvidenceSource], consensus_score: float, mean_prob: float
-    ) -> list[dict[str, Any]]:
-        """
-        Detect anomalous / outlier evidence sources.
-
-        Uses z-score based detection: sources deviating more than
-        `anomaly_threshold` standard deviations from the mean are flagged.
-
-        Also detects information cascades: when multiple sources converge
-        rapidly on the same estimate with high similarity (herding detection).
-
-        Args:
-            sources: List of evidence sources
-            consensus_score: Current consensus score
-            mean_prob: Mean probability across sources
-
-        Returns:
-            List of anomaly dicts with keys: type, source_id, severity, description
-        """
-        anomalies: list[dict[str, Any]] = []
+        self, sources: list[EvidenceSource], weights: dict[str, float]
+    ) -> list[str]:
+        """Z-score 异常检测。"""
         if len(sources) < 3:
-            return anomalies
+            return []
 
-        values = [s.evidence_probability() for s in sources]
-        mean = sum(values) / len(values)
-        variance = sum((v - mean) ** 2 for v in values) / len(values)
-        std_dev = math.sqrt(variance)
+        weighted_mean = sum(weights.get(s.source_id, 0.0) * s.probability for s in sources)
+        variance = sum(
+            weights.get(s.source_id, 0.0) * (s.probability - weighted_mean) ** 2
+            for s in sources
+        )
+        std = math.sqrt(max(variance, 0.0))
+        if std < 1e-6:
+            return []
 
-        if std_dev == 0:
-            return anomalies
-
-        # Z-score based anomaly detection
-        for source in sources:
-            z = abs(source.evidence_probability() - mean) / std_dev
+        anomalies: list[str] = []
+        for s in sources:
+            z = abs(s.probability - weighted_mean) / std
             if z > self.anomaly_threshold:
-                anomalies.append(
-                    {
-                        "type": "outlier",
-                        "source_id": source.source_id,
-                        "severity": "high" if z > 3.0 else "medium",
-                        "z_score": round(z, 3),
-                        "description": (
-                            f"Source probability {source.evidence_probability():.3f} "
-                            f"deviates {z:.1f}σ from consensus mean {mean:.3f}"
-                        ),
-                    }
-                )
-
-        # Information cascade detection
-        # When consensus is very high but source diversity is low
-        n_sources = len(sources)
-        if consensus_score > 0.9 and n_sources < self.CASCADE_DETECTION_WINDOW:
-            anomalies.append(
-                {
-                    "type": "potential_cascade",
-                    "severity": "low",
-                    "description": (
-                        f"High consensus ({consensus_score:.2f}) with few sources "
-                        f"({n_sources}). Potential information cascade - verify sources "
-                        f"are independently derived."
-                    ),
-                }
-            )
-
+                anomalies.append(s.source_id)
         return anomalies
 
-    # ─── Main Assessment Pipeline ──────────────────────────────────────
+    def classify_stability(
+        self,
+        consensus: float,
+        anomaly_count: int,
+        momentum: float = 0.0,
+    ) -> StabilityLevel:
+        """态势稳定性分类。"""
+        if anomaly_count > 0:
+            return StabilityLevel.ANOMALOUS
+        if consensus >= self.consensus_high:
+            return StabilityLevel.STABLE
+        if consensus <= self.consensus_low:
+            return StabilityLevel.UNSTABLE
+        if abs(momentum) > 2.0:
+            return StabilityLevel.EMERGING
+        return StabilityLevel.AMBIGUOUS
+
+    def _calibrate_confidence(
+        self,
+        consensus: float,
+        source_factor: float,
+        effective_factor: float,
+        avg_reliability: float,
+        anomaly_count: int,
+    ) -> float:
+        """
+        置信度校准：
+            confidence = 0.35×consensus + 0.25×source_factor
+                       + 0.20×effective_factor + 0.20×avg_reliability
+                       − 0.05×anomaly_count
+        """
+        conf = (
+            0.35 * consensus
+            + 0.25 * source_factor
+            + 0.20 * effective_factor
+            + 0.20 * avg_reliability
+            - 0.05 * anomaly_count
+        )
+        return max(0.0, min(1.0, conf))
+
+    # ------------------------------------------------------------------
+    # 主接口
+    # ------------------------------------------------------------------
 
     def assess_situation(
         self,
@@ -584,189 +367,134 @@ class DomainAwarenessEngine:
         fusion_method: str = "hybrid",
     ) -> SituationAssessment:
         """
-        Complete multi-source intelligence fusion and situation assessment.
-
-        This is the main entry point of the engine. Processing pipeline:
-
-        1. Source normalization and weight computation
-        2. Evidence fusion using specified method
-        3. Consensus analysis and variance computation
-        4. Anomaly detection
-        5. Stability classification
-        6. Confidence calibration
+        多源情报融合 → 统一概率态势评估。
 
         Args:
-            sources: List of evidence sources to fuse
-            prior_probability: Prior probability (default 0.5, uninformative)
-            fusion_method: 'linear', 'log_odds', 'bayesian', or 'hybrid'
-
-        Returns:
-            SituationAssessment with aggregated probability and confidence
-
-        Raises:
-            ValueError: If fusion_method is not recognized
+            sources: 证据来源列表
+            prior_probability: 先验概率
+            fusion_method: linear / log_odds / bayesian / hybrid
         """
-        # Step 0: Handle edge case - no sources
         if not sources:
             return SituationAssessment(
                 aggregate_probability=prior_probability,
-                confidence=0.1,
-                source_count=0,
+                source_weights={},
                 consensus_score=0.0,
-                stability_status=StabilityStatus.AMBIGUOUS,
-                contributing_sources=[],
-                anomalies=[
-                    {
-                        "type": "no_evidence",
-                        "severity": "high",
-                        "description": "No evidence sources provided - returning prior probability",
-                    }
-                ],
+                stability=StabilityLevel.AMBIGUOUS,
+                source_count=0,
+                fusion_method=fusion_method,
+                confidence=0.0,
             )
 
-        # Step 1: Normalize sources
-        sorted_sources, weights = self.normalize_sources(sources)
+        # 1. 计算源权重
+        raw_weights = {
+            s.source_id: self.calculate_source_weight(s) for s in sources
+        }
+        weights = self._normalize_weights(raw_weights)
 
-        # Step 2: Evidence fusion
+        # 2. 融合
         if fusion_method == "linear":
-            fused = self.linear_pool_fusion(sorted_sources, weights)
+            agg_prob = self._fuse_linear(sources, weights)
         elif fusion_method == "log_odds":
-            fused = self.log_odds_pool_fusion(sorted_sources, weights)
+            agg_prob = self._fuse_log_odds(sources, weights)
         elif fusion_method == "bayesian":
-            fused = self.bayesian_evidence_accumulation(sorted_sources, prior_probability)
-        elif fusion_method == "hybrid":
-            # Hybrid: average of linear and log-odds
-            linear = self.linear_pool_fusion(sorted_sources, weights)
-            log_odds = self.log_odds_pool_fusion(sorted_sources, weights)
-            bayesian = self.bayesian_evidence_accumulation(sorted_sources, prior_probability)
-            fused = (linear + log_odds + bayesian) / 3.0
-        else:
-            raise ValueError(
-                f"Unknown fusion_method: {fusion_method}. "
-                f"Use 'linear', 'log_odds', 'bayesian', or 'hybrid'."
-            )
+            agg_prob = self._fuse_bayesian(sources, weights, prior_probability)
+        else:  # hybrid
+            agg_prob = self._fuse_hybrid(sources, weights, prior_probability)
 
-        # Step 3: Consensus analysis
-        consensus = self.compute_consensus_score(sources)
-        values = [s.evidence_probability() for s in sources]
-        mean = sum(values) / len(values)
-        variance = sum((v - mean) ** 2 for v in values) / len(values)
+        agg_prob = max(0.0, min(1.0, agg_prob))
 
-        # Step 4: Anomaly detection
-        anomalies = self.detect_anomalies(sources, consensus, mean)
+        # 3. 共识分析
+        consensus = self.calculate_consensus(sources, weights)
 
-        # Step 5: Stability classification
-        n_effective = self.compute_effective_number_of_sources(weights)
+        # 4. 异常检测
+        anomalies = self.detect_anomalies(sources, weights)
 
-        if len(sources) < self.MIN_SOURCES_FOR_CONSENSUS:
-            status = StabilityStatus.AMBIGUOUS
-        elif anomalies and any(a.get("severity") == "high" for a in anomalies):
-            status = StabilityStatus.ANOMALOUS
-        elif consensus >= self.consensus_high and n_effective >= 2:
-            status = StabilityStatus.STABLE
-        elif consensus >= self.consensus_low:
-            status = StabilityStatus.UNSTABLE
-        else:
-            # Check if there's a trend (last vs first half of sources by time)
-            sorted_by_time = sorted(sources, key=lambda s: s.timestamp)
-            mid = len(sorted_by_time) // 2
-            if mid > 0:
-                early_mean = sum(
-                    s.evidence_probability() for s in sorted_by_time[:mid]
-                ) / mid
-                late_mean = sum(
-                    s.evidence_probability() for s in sorted_by_time[mid:]
-                ) / max(len(sorted_by_time) - mid, 1)
-                if abs(late_mean - early_mean) > 0.15:
-                    status = StabilityStatus.EMERGING
-                else:
-                    status = StabilityStatus.AMBIGUOUS
-            else:
-                status = StabilityStatus.AMBIGUOUS
+        # 5. 稳定性分类
+        # 用 aggregate 与 prior 的差作为动量近似
+        momentum = (agg_prob - prior_probability) * 100.0
+        stability = self.classify_stability(consensus, len(anomalies), momentum)
 
-        # Step 6: Confidence calibration
-        # Confidence = function of:
-        #   - Number of sources (more = higher)
-        #   - Consensus score (more agreement = higher)
-        #   - Effective source count (independent sources = higher)
-        #   - Source reliability (higher quality = higher)
-        avg_reliability = sum(s.reliability.weight for s in sources) / len(sources)
-        source_factor = min(len(sources) / 5.0, 1.0)  # Saturates at 5 sources
-        effective_factor = min(n_effective / 3.0, 1.0)  # Saturates at 3 effective sources
-
-        raw_confidence = (
-            0.35 * consensus
-            + 0.25 * source_factor
-            + 0.20 * effective_factor
-            + 0.20 * avg_reliability
+        # 6. 置信度校准
+        source_factor = min(len(sources) / 5.0, 1.0)
+        effective_weight = sum(raw_weights.values())
+        max_possible = len(sources) * 1.0  # 最大可能权重（reliability=1, confidence=1, decay=1）
+        effective_factor = min(effective_weight / max(max_possible, 1e-6), 1.0)
+        avg_reliability = (
+            sum(s.reliability_weight for s in sources) / len(sources)
+        )
+        confidence = self._calibrate_confidence(
+            consensus, source_factor, effective_factor, avg_reliability, len(anomalies)
         )
 
-        # Anomaly penalty
-        if anomalies:
-            penalty = 0.05 * len(anomalies)
-            raw_confidence = max(0.0, raw_confidence - penalty)
-
-        confidence = max(0.0, min(raw_confidence, 1.0))
-
-        # Build final assessment
-        contributing_ids = [s.source_id for s in sorted_sources]
-
         return SituationAssessment(
-            aggregate_probability=fused,
-            confidence=confidence,
-            source_count=len(sources),
+            aggregate_probability=agg_prob,
+            source_weights=weights,
             consensus_score=consensus,
-            stability_status=status,
-            contributing_sources=contributing_ids,
-            variance=variance,
-            anomalies=anomalies,
+            stability=stability,
+            anomaly_flags=anomalies,
+            source_count=len(sources),
+            fusion_method=fusion_method,
+            confidence=confidence,
+            metadata={
+                "prior_probability": prior_probability,
+                "raw_weights": raw_weights,
+                "momentum_pp": momentum,
+                "avg_reliability": avg_reliability,
+            },
         )
 
     def cross_validate(
-        self, sources_a: list[EvidenceSource], sources_b: list[EvidenceSource]
+        self,
+        group_a: list[EvidenceSource],
+        group_b: list[EvidenceSource],
+        prior_probability: float = 0.5,
     ) -> dict[str, Any]:
         """
-        Cross-validate two independent source groups.
-
-        Useful when you have two independent sets of evidence
-        (e.g., analytical vs observational). Computes:
-        - Agreement level (absolute probability difference)
-        - Combined fusion result
-        - Meta-confidence based on cross-group agreement
-
-        Args:
-            sources_a: First group of evidence sources
-            sources_b: Second group of evidence sources
+        两组独立源交叉验证。
 
         Returns:
-            Dict with: agreement, delta, assessment_a, assessment_b, combined
+            agreement: 两组概率一致性 [0,1]
+            delta: 概率差
+            combined: 合并后评估
+            meta_confidence: 元置信度
         """
-        assessment_a = self.assess_situation(sources_a)
-        assessment_b = self.assess_situation(sources_b)
+        if not group_a or not group_b:
+            return {
+                "agreement": 0.0,
+                "delta": 0.0,
+                "combined": None,
+                "meta_confidence": 0.0,
+            }
 
-        delta = abs(assessment_a.aggregate_probability - assessment_b.aggregate_probability)
-        agreement = 1.0 - delta
+        assess_a = self.assess_situation(group_a, prior_probability)
+        assess_b = self.assess_situation(group_b, prior_probability)
 
-        # Combined assessment with all sources
-        combined = self.assess_situation(sources_a + sources_b)
+        delta = abs(assess_a.aggregate_probability - assess_b.aggregate_probability)
+        agreement = max(0.0, 1.0 - delta * 2.0)
 
-        # Meta-confidence: product of individual confidences × agreement
-        meta_confidence = assessment_a.confidence * assessment_b.confidence * agreement
+        combined_sources = group_a + group_b
+        combined = self.assess_situation(combined_sources, prior_probability)
+
+        meta_confidence = (
+            agreement * 0.5
+            + combined.consensus_score * 0.3
+            + min(combined.source_count / 8.0, 1.0) * 0.2
+        )
 
         return {
             "agreement": agreement,
             "delta": delta,
-            "assessment_a": assessment_a,
-            "assessment_b": assessment_b,
-            "combined_assessment": combined,
+            "combined": combined,
             "meta_confidence": meta_confidence,
+            "group_a_probability": assess_a.aggregate_probability,
+            "group_b_probability": assess_b.aggregate_probability,
         }
 
 
 __all__ = [
     "EvidenceType",
     "SourceReliability",
-    "StabilityStatus",
+    "StabilityLevel",
     "EvidenceSource",
     "SituationAssessment",
     "DomainAwarenessEngine",

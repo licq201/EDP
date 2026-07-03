@@ -1,55 +1,169 @@
-# EDP — 期望域感知方法（Expectation Domain Perception Method）
+# EDP — 期望域感知方法 V2.0（Expectation Domain Perception Method）
 
-> **多源情报融合与概率态势感知框架**
+> **通用全域概率态势感知框架**
+>
+> *A Universal Domain-Aware Probabilistic Situation Awareness Framework*
 
-> *A Multi-Source Intelligence Fusion and Probabilistic Situation Awareness Framework*
+**版本: 2.0** | **许可: MIT** | **Python 3.10+**
+
+---
+
+## ⚠️⚠️⚠️ 严重风险警示 ⚠️⚠️⚠️
+
+```
+本框架仅供学术研究与教育用途。它【不构成】任何投资建议、决策建议、
+交易指导或财务规划建议。
+
+1. 概率预测的不确定性：所有概率均为估计值，存在显著不确定性。
+2. 历史不代表未来：历史概率模式【不保证】未来结果。"黑天鹅"事件
+   不在模型覆盖范围内。
+3. 资金损失风险：AllocationEngine 输出的分配方案可能导致全部本金
+   损失。任何实际决策都存在重大风险。
+4. 模型局限性：框架依赖输入数据质量、域适配器的正确实现、以及
+   各引擎的数学假设。任何环节的错误都会传播到最终结果。
+5. 非专业建议：本框架的输出【不是】持牌专业人士的建议。在
+   做任何实际决策前，请咨询合格的专业人士。
+
+使用者须自行承担一切决策风险。
+```
 
 ---
 
 ## 1. 概述 Overview
 
-**期望域感知方法（Expectation Domain Perception Method, EDP）** 是一套用于**概率分析与统计研究**的学术计算框架。它整合了四个协同工作的分析层，从原始市场报价出发，经贝叶斯推断与时间序列动量分析，最终输出多源情报融合后的态势评估与资源分配方案。
+**期望域感知方法（Expectation Domain Perception Method, EDP）** V2.0 是一个**通用的概率预测与决策框架**。
 
-本框架的设计遵循以下核心原则：
+任何可以被分解为"若干可能结果 + 若干信息来源"的问题，都可以用 EDP 处理。
 
-1. **概率公理化基础** —— 所有计算严格服从 Kolmogorov 概率公理；
-2. **贝叶斯证据累积** —— 按序处理来自独立来源的情报，以共轭先验实现解析后验更新；
-3. **时间序列动量分析** —— 基于 Moskowitz 等人的动量范式（2012），检测概率质量在结果空间的流动；
-4. **多源情报融合** —— 融合加权线性意见池、对数优比池与 DeGroot 共识动力学；
-5. **信息级联检测** —— 识别潜在的羊群效应与证据冗余；
-6. **最优资本分配** —— 结合 Kelly 准则与 Markowitz 组合理论，实现带约束的资源分配。
+### 1.1 全域与近似全域
 
-⚠️ **本框架仅供学术研究与教育用途。历史概率模式不保证未来结果。本框架不构成任何投资建议或决策建议。**
+- **全域（Complete Domain）：** 所有可能结果互斥且穷举，知道其中一个概率即确定其余。
+- **近似全域（Approximate Domain）：** 结果空间未完全穷举，但已覆盖绝大部分概率质量，剩余未覆盖部分可通过补集近似。
+
+EDP 对两类问题使用同一套引擎，区别仅在于 EventGraph 的拓扑结构和归一化策略。
+
+### 1.2 核心设计哲学
+
+```
+不要问"这是什么领域的问题"。
+要问"有多少个信息来源，多少个可能结果，它们之间是什么关系"。
+```
 
 ---
 
-## 2. 五层堆叠式分析架构 Five-Layer Analytical Architecture
+## 2. 六层堆叠式架构 Six-Layer Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  第 5 层 · 资源分配层  Resource Allocation                    │
-│  Kelly Criterion · Markowitz Portfolio Theory · Three Principles  │
-├──────────────────────────────────────────────────────────────┤
-│  第 4 层 · 全域感知层  Domain Awareness                      │
-│  Multi-Source Intelligence Fusion · Evidence Combination     │
-│  Consensus Dynamics · Anomaly Detection · Cascade Detection  │
-├──────────────────────────────────────────────────────────────┤
-│  第 3 层 · 流向倍增层  Flow Amplification                    │
-│  Base Flow → Directional Consistency → Gradient Position     │
-│  Market Momentum → Amplification Score                       │
-├──────────────────────────────────────────────────────────────┤
-│  第 2 层 · 贝叶斯推断层  Bayesian Inference                  │
-│  Beta-Binomial Conjugacy · Shin Marginal Decomposition       │
-│  Glicko-2 Rating System · Credible Intervals                 │
-├──────────────────────────────────────────────────────────────┤
-│  第 1 层 · 概率分析层  Probability Analysis                  │
-│  Market Quotes → Shin Normalization → True Probabilities     │
-│  Conditional Probabilities → Flow Analysis                   │
-├──────────────────────────────────────────────────────────────┤
-│  第 0 层 · 数据获取层  Data Acquisition                      │
-│  Snapshot Collection · Quality Validation · Standard Interface│
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                    EDP V2.0 — 六层堆叠式架构                          │
+│                                                                      │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │                    Layer 6: 回测与校准层                        │  │
+│  │  Brier Score · Log Score · CRPS · 校准曲线 · 概率分解           │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 5: 资源分配层                          │  │
+│  │  Kelly Criterion · Markowitz · 三原则 · 风险分层 · 分数Kelly     │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 4: 全域感知层                          │  │
+│  │  线性池 · 对数优比池 · 贝叶斯累积 · 共识动力学 · 异常检测       │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 3: 流向分析层                          │  │
+│  │  概率流向 · 动量 · 速度/加速度 · 倍增评分 · 级联检测            │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 2: 推断引擎层                          │  │
+│  │  Beta-Binomial · Glicko-2 · 在线聚合 · 时序预测                 │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 1: 概率提取层                          │  │
+│  │  Shin归一化 · 比例归一化 · 信心度映射 · 连续→离散               │  │
+│  ├────────────────────────────────────────────────────────────────┤  │
+│  │                    Layer 0: 数据抽象层                          │  │
+│  │  Outcome · Quote · Evidence · Snapshot · EventGraph            │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 3. 快速开始 Quick Start
+
+```python
+from edp import EDP, GenericDomain, Outcome, Evidence
+
+# 1. 定义问题域（任意"结果+信号"问题）
+domain = GenericDomain([
+    Outcome("rain", "下雨"),
+    Outcome("no_rain", "不下雨"),
+])
+
+# 2. 初始化 EDP
+edp = EDP(domain)
+
+# 3. 传入信息来源，一键分析
+result = edp.analyze(
+    evidence=[
+        Evidence("weather_model", "model", {"probability": 0.72}, confidence=0.8),
+        Evidence("satellite", "sensor", {"probability": 0.68}, confidence=0.9),
+        Evidence("historical", "model", {"probability": 0.60}, confidence=0.5),
+    ],
+    budget=1000,
+)
+
+print(result["summary"])
+# 最可能: rain (~68%) | 来源: 3 | 共识: 0.91 | 分配: ...
+print(result["probabilities"])
+# {"rain": 0.68, "no_rain": 0.32}
+```
+
+详见 `examples/python/basic_usage.py`。
+
+---
+
+## 4. 项目结构 Project Structure
+
+```
+edp/
+├── src/python/
+│   ├── __init__.py           # 包导出
+│   ├── core.py               # L0: Outcome/Quote/Evidence/Snapshot/EventGraph/DomainAdapter
+│   ├── probability_engine.py  # L1-3: Shin/Bayesian/Flow/Glicko-2
+│   ├── online_aggregator.py   # L2: ML-Poly/EWA/Ridge
+│   ├── flow_amplification.py  # L3: 倍增/BFS/级联
+│   ├── domain_awareness.py    # L4: 融合/共识/异常
+│   ├── allocation_engine.py   # L5: Kelly/Markowitz/三原则
+│   ├── calibration.py         # L6: Brier/Log/CRPS/校准曲线
+│   └── edp.py                 # 顶层 EDP 接口
+├── tests/python/
+├── examples/python/
+└── docs/theory/references.md
+```
+
+---
+
+## 5. 从 V1 升级到 V2.0
+
+V2.0 相对 V1（4.1）的重大变更：
+
+| 变更项 | V1 (4.1) | V2.0 |
+|--------|----------|------|
+| 架构层数 | 5 层 | 6 层（新增校准层） |
+| 顶层接口 | 无统一入口 | `EDP` 类一键分析 |
+| 域适配 | 硬编码 | `DomainAdapter` + `GenericDomain` |
+| 事件关系 | 固定 | `EventGraph`（链/完全连接/自定义） |
+| 在线聚合 | 无 | `OnlineAggregator`（ML-Poly/EWA/Ridge） |
+| 校准 | 无 | `CalibrationEngine`（Brier分解/校准曲线） |
+| 风险警示 | 简单声明 | 每个模块顶部强化警示 + AllocationEngine 详细警示 |
+
+V1 的 `flow_analyzer.py`、`scheme_designer.py` 已移除，功能分别合并到 `flow_amplification.py`、`allocation_engine.py`。
+
+---
+
+*EDP V2.0 — 通用全域概率态势感知框架*
+*任何可被分解为"结果 + 信号"的问题，都可以用它处理*
+*仅供学术研究与教育用途*
+
+---
+
+## 以下为历史文档（保留供参考）
 
 ---
 

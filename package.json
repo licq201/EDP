@@ -1,7 +1,7 @@
 {
   "name": "edp-framework",
-  "version": "4.1.0",
-  "description": "EDP - Expectation Domain Perception Method - 期望域感知法 - Domain-Aware Probability Analysis Framework",
+  "version": "2.0.0",
+  "description": "EDP - Expectation Domain Perception Method - 期望域感知方法 V2.0 - 通用全域概率态势感知框架",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
