@@ -1,6 +1,6 @@
 # Academic References
 
-This document contains the complete list of academic references that form the theoretical foundation of the SPAF framework.
+This document contains the complete list of academic references that form the theoretical foundation of the EDP framework.
 
 ## Core References
 
@@ -21,6 +21,20 @@ DOI: [10.2307/2234526](https://doi.org/10.2307/2234526)
 DOI: [10.1201/b16018](https://doi.org/10.1201/b16018)
 
 > The foundational text for Bayesian inference. Probability flow analysis is conceptually equivalent to Bayesian posterior updating.
+
+---
+
+### Glicko-2 Rating System
+
+**Glickman, M.E. (2013).** "Example of the Glicko-2 System." *Boston University*.
+
+> The reference paper for the Glicko-2 rating system (with volatility), which EDP uses for dynamic strength modeling of competitors/teams.
+
+**Glickman, M.E. (1999).** "Parameter Estimation in Large Dynamic Paired Comparison Systems." *Journal of the Royal Statistical Society: Series C (Applied Statistics)*, 48(3), 377-394.
+
+DOI: [10.1111/1467-9876.00154](https://doi.org/10.1111/1467-9876.00154)
+
+> The original Glicko system paper, the precursor to Glicko-2.
 
 ---
 
@@ -148,10 +162,10 @@ If you use this framework in academic work, please cite:
 
 ```bibtex
 @software{edp2026,
-  author = {EDP Team},
+  author = {Nurmamat·Omar},
   title = {EDP: Expectation Domain Perception Method},
   year = {2026},
-  version = {4.1.0},
+  version = {2.0.0},
   url = {https://github.com/ai-nurmamat/EDP}
 }
 ```

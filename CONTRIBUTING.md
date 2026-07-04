@@ -1,6 +1,6 @@
-# Contributing to SPAF
+# Contributing to EDP
 
-Thank you for your interest in contributing to the Sports Probability Analysis Framework!
+Thank you for your interest in contributing to the EDP (Expectation Domain Perception Method) framework!
 
 ## ⚠️ Important Notice
 
@@ -36,15 +36,15 @@ Contributions must align with this purpose. We do not accept contributions that:
 
 ```bash
 # Clone your fork
-git clone https://github.com/your-username/spaf-framework.git
-cd spaf-framework
+git clone https://github.com/your-username/EDP.git
+cd EDP
 
 # Python setup
 python -m venv venv
 source venv/bin/activate  # or `venv\Scripts\activate` on Windows
 pip install -e ".[dev]"
 
-# Node.js setup
+# Node.js setup (optional, JS is V1 legacy)
 npm install
 
 # Run tests
@@ -94,4 +94,4 @@ Open an issue for any questions about contributing.
 
 ---
 
-Thank you for helping improve SPAF! 🎯
+Thank you for helping improve EDP!

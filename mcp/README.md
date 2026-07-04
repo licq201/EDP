@@ -1,17 +1,21 @@
 # EDP MCP Server
 
-Model Context Protocol (MCP) server for the EDP framework.
+Model Context Protocol (MCP) server for the EDP V2.0 framework.
 
 ## ⚠️ Disclaimer
 
 **This server is for ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY.**
 
-This framework is for probability analysis and statistical research. No system can guarantee results.
+- This framework is for probability analysis and statistical research.
+- No system can guarantee results.
+- Outputs do **not** constitute any investment advice or decision-making advice.
+- Users bear full responsibility for their own decisions.
 
 ## Installation
 
 ```bash
-pip install edp-mcp-server
+# 从源码安装（含 MCP 依赖）
+pip install -e ".[mcp]"
 ```
 
 ## Configuration
@@ -22,102 +26,101 @@ Add to your MCP client configuration (e.g., Claude Desktop):
 {
   "mcpServers": {
     "edp": {
-      "command": "edp-mcp-server",
-      "args": []
+      "command": "python",
+      "args": ["path/to/EDP/mcp/server.py"]
     }
   }
 }
 ```
 
-## Available Tools
+## Available Tools (V2.0)
+
+The server exposes the following six tools, mirroring the EDP V2.0 seven-layer architecture.
+
+---
+
+### `analyze_situation`
+
+One-shot analysis running the full L0 → L7 pipeline.
+
+**Parameters:**
+- `outcomes` (array): `[{"id": "a", "label": "结果A"}, ...]`
+- `evidence` (array, optional): List of evidence dicts
+  - `{"id":..., "source_type":..., "probability":..., "outcome_id":..., "confidence":...}`
+- `raw_data` (object, optional): `{outcome_id: decimal_quote}` (market quotes)
+- `budget` (number, optional): Allocation budget (default: 1000.0)
+- `return_multipliers` (object, optional): `{outcome_id: return_multiplier}`
+
+**Returns:** probabilities, summary, prediction_set, coverage_target, allocation, warnings.
+
+---
 
 ### `calculate_true_probability`
 
-Calculate true probabilities from market quotes by removing the margin.
+Shin normalization: extract true probabilities from market quotes.
 
 **Parameters:**
-- `quotes` (object): Dictionary mapping outcomes to decimal values
+- `quotes` (object): `{outcome_id: decimal_quote}`
 
 **Example:**
 ```json
 {
-  "quotes": {
-    "home": 1.50,
-    "draw": 4.20,
-    "away": 6.00
-  }
+  "quotes": {"home": 1.50, "draw": 4.20, "away": 6.00}
 }
 ```
 
-**Returns:**
-```json
-{
-  "true_probabilities": {
-    "home": 0.632,
-    "draw": 0.226,
-    "away": 0.158
-  },
-  "margin": 0.054
-}
-```
+**Returns:** `true_probabilities`, `implied_probabilities`, `market_margin`, `method`.
 
 ---
 
-### `analyze_flow`
+### `assess_situation`
 
-Analyze probability flow between two time points.
+Multi-source intelligence fusion (L4 Domain Awareness).
 
 **Parameters:**
-- `initial_probabilities` (object): Initial probability snapshot
-- `latest_probabilities` (object): Latest probability snapshot
-- `market_type` (string, optional): Market type (default: "1X2")
+- `sources` (array): List of source dicts
+  - `{"source_id":..., "evidence_type":..., "probability":..., "reliability_weight":..., "confidence":...}`
+- `prior_probability` (number, optional): Prior (default: 0.5)
 
-**Returns:**
-- Flow report with direction and significance for each outcome
+**Returns:** aggregate_probability, consensus_score, stability, source_count, fusion_method, confidence, anomaly_flags.
 
 ---
 
-### `calculate_amplification`
+### `conformal_predict`
 
-Calculate amplification effect for probability flows.
+Conformal prediction set with finite-sample coverage guarantee (L7).
 
 **Parameters:**
-- `flow_report` (object): Flow analysis report
-- `gradient_map` (object): Map of outcomes to adjacent outcomes
-- `outcome_probabilities` (object): Current true probabilities
-- `domain_confidence` (object, optional): Confidence scores from domain awareness
+- `predictions` (object): `{outcome_id: probability}`
+- `alpha` (number, optional): Miscoverage rate (default: 0.1)
+- `method` (string, optional): `"split"` / `"aci"` / `"agaci"` (default: `"aci"`)
 
-**Returns:**
-- Amplification report with scores and levels
+**Returns:** `prediction_set`, `coverage_target`, `threshold`, `method`.
 
 ---
 
-### `validate_scheme`
+### `online_aggregate`
 
-Validate a scheme against Three Principles and rules.
+Online expert aggregation (Soft-Bayes / EWA / MLPoly / Ridge / OBS).
 
 **Parameters:**
-- `legs` (array): List of scheme legs
-- `multiplier` (integer, optional): Multiplier (default: 1)
-- `allocation_per_combination` (number, optional): Allocation amount (default: 2.0)
+- `predictions` (array): List of `{source_id: probability}` snapshots over time
+- `actuals` (array): List of actual values (aligned with predictions)
+- `algorithm` (string, optional): Aggregation algorithm (default: `"online_bayesian_stacking"`)
 
-**Returns:**
-- Validation result with any errors
+**Returns:** `weights`, `performance`.
 
 ---
 
-### `generate_schemes`
+### `evaluate_prediction`
 
-Generate optimized schemes within budget.
+Prediction calibration evaluation (L6 — Brier, Log, Hyvärinen scores).
 
 **Parameters:**
-- `amplification_report` (object): Amplification report
-- `budget` (number): Total budget to allocate
-- `scenario_data` (object): Scenario information
-- `max_schemes` (integer, optional): Maximum schemes to generate (default: 10)
+- `predictions` (object): `{outcome_id: probability}`
+- `actual_outcome` (string): The outcome that actually occurred
 
-**Returns:**
-- Scheme bundle with optimized schemes
+**Returns:** Brier score, log score, Hyvärinen score, top-1 accuracy, etc.
 
 ## Usage with AI Assistants
 
@@ -126,7 +129,7 @@ Once configured, you can use natural language to interact with the EDP framework
 ```
 User: Calculate the true probability for quotes home 1.5, draw 4.2, away 6.0
 
-AI: I'll calculate the true probabilities by removing the market margin...
+AI: I'll calculate the true probabilities via Shin normalization...
 
 [Calls calculate_true_probability tool]
 
@@ -146,15 +149,15 @@ git clone https://github.com/ai-nurmamat/EDP.git
 cd EDP/mcp
 
 # Install dependencies
-pip install -e ".[dev]"
+pip install -e ".[dev,mcp]"
 
-# Run server
+# Run server (prints available tools)
 python server.py
 ```
 
 ## License
 
-MIT License - See LICENSE file for details.
+MIT License — See [LICENSE](../LICENSE) file for details.
 
 ## Disclaimer
 

@@ -29,7 +29,7 @@ import {
 
 function main(): void {
   console.log('='.repeat(60));
-  console.log('SPAF - Sports Probability Analysis Framework');
+  console.log('EDP - Expectation Domain Perception Method (V1 legacy)');
   console.log('Basic Usage Example (TypeScript/JavaScript)');
   console.log('='.repeat(60));
   console.log('\n⚠️  DISCLAIMER: For ACADEMIC RESEARCH AND EDUCATIONAL PURPOSES ONLY');

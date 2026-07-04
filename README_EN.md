@@ -129,7 +129,7 @@ An advancement over the Elo system, introducing rating deviation (RD) and volati
 
 where ν is the estimated variance and Δ the improvement deviation.
 
-**Reference**: Glickman, M.E. (1999). *Parameter Estimation in Large Dynamic Paired Comparison Systems*. Applied Statistics, 48(3), 377–394.
+**Reference**: Glickman, M.E. (2013). *Example of the Glicko-2 System*. Boston University.
 
 ### 3.4 Probability Flow Analysis
 
@@ -216,7 +216,7 @@ This controls volatility at the expense of a reduced expected growth rate.
 | Conditional probability | Bayesian conditional definition | p(A \| B) |
 | Bayesian update | Beta-Binomial conjugate model | posterior α, β, CI |
 | Prior fusion | Log-odds / linear pool | combined posterior |
-| Glicko-2 ratings | Glickman (1999) | μ, RD, σ |
+| Glicko-2 ratings | Glickman (2013) | μ, RD, σ |
 | Flow analysis | Time-series momentum | flow_velocity, acceleration |
 
 ### 4.2 FlowAnalyzer
@@ -282,7 +282,7 @@ This controls volatility at the expense of a reduced expected growth rate.
 | Shin Normalization | Shin, H.S. (1992). *Prices of State-Contingent Claims with Insider Traders*. Economic Journal, 102(411), 426–435. |
 | Bayesian Inference | Gelman, A., Carlin, J.B., Stern, H.S., & Rubin, D.B. (2013). *Bayesian Data Analysis*, 3rd ed. Chapman & Hall/CRC. |
 | Time-Series Momentum | Moskowitz, T.J., Ooi, Y.H., & Pedersen, L.H. (2012). *Time Series Momentum*. Journal of Financial Economics, 104(2), 228–250. |
-| Glicko-2 Rating | Glickman, M.E. (1999). *Parameter Estimation in Large Dynamic Paired Comparison Systems*. Applied Statistics, 48(3), 377–394. |
+| Glicko-2 Rating | Glickman, M.E. (2013). *Example of the Glicko-2 System*. Boston University. |
 | Elo Rating System | Elo, A.E. (1978). *The Rating of Chessplayers, Past and Present*. Arco. |
 | Information Cascades | Banerjee, A.V. (1992). *A Simple Model of Herd Behavior*. Quarterly Journal of Economics, 107(3), 797–817. |
 | | Bikhchandani, S., Hirshleifer, D., & Welch, I. (1992). *A Theory of Fads, Fashion, Custom, and Cultural Change as Information Cascades*. JPE, 100(5), 992–1026. |
