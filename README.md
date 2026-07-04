@@ -1,5 +1,13 @@
 # EDP — 期望域感知方法 V2.0（Expectation Domain Perception Method）
 
+[![Version](https://img.shields.io/badge/version-2.0-blue?logo=semver&logoColor=white)](https://github.com/ai-nurmamat/EDP/releases/tag/v2.0.0)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white)](https://github.com/ai-nurmamat/EDP/blob/master/pyproject.toml)
+[![License](https://img.shields.io/badge/license-MIT-green?logo=opensourceinitiative&logoColor=white)](https://github.com/ai-nurmamat/EDP/blob/master/LICENSE)
+[![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen?logo=codecov&logoColor=white)](https://github.com/ai-nurmamat/EDP/tree/master/tests)
+[![Tests](https://img.shields.io/badge/tests-155%20passing-brightgreen?logo=pytest&logoColor=white)](https://github.com/ai-nurmamat/EDP/tree/master/tests)
+[![GitHub stars](https://img.shields.io/github/stars/ai-nurmamat/EDP?style=social&logo=github)](https://github.com/ai-nurmamat/EDP/stargazers)
+[![Last Commit](https://img.shields.io/github/last-commit/ai-nurmamat/EDP?logo=git&logoColor=white)](https://github.com/ai-nurmamat/EDP/commits/master)
+
 > **通用全域概率态势感知框架**
 >
 > *A Universal Domain-Aware Probabilistic Situation Awareness Framework*
